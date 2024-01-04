@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
 from app.models import CreateDIDWebInput
-from app.controllers import agent, redis, status_list, did_web
+from app.controllers import agent, status_list, did_web
+from app.storage import askar
 from app.validations import ValidationException
 from config import settings
 from app.models import *
@@ -26,16 +27,10 @@ async def register(request_body: CreateDIDWebInput, request: Request):
 
     # Remove spacing and lowercase the label
     label = parse.quote(request_body["label"].strip().lower())
-    # Creates a did:web identifier of the following form;
-    # did:web:{domain}:organization:{label} -> did:web:example.com:organization:abc
-    did = did_web.from_label(label)
-    # Register with agent using the sov method
+    
+    # Create a did:web identifier and register with traction
+    did = f"{settings.DID_WEB_BASE}:organization:{label}"
     verkey = agent.create_did("sov", "ed25519", did, token)
-
-    # # PLACEHOLDER -> create a new client for controlling this did
-    # client_id = uuid.uuid1()
-    # client_secret = secrets.token_urlsafe(16)
-    # redis.store_client_info(label, client_id, client_secret)
 
     # Create and store did document
     did_doc = {
@@ -67,7 +62,9 @@ async def register(request_body: CreateDIDWebInput, request: Request):
             }
         ],
     }
-    redis.store_did_doc(label, did_doc)
+
+    data_key = f"{label}:did_document".lower()
+    await askar.store_data(settings.ASKAR_KEY, data_key, did_doc)
 
     # Status list vc prep
     verkey = agent.get_verkey(did, token)
@@ -85,20 +82,24 @@ async def register(request_body: CreateDIDWebInput, request: Request):
     revocation_list_vc = agent.sign_json_ld(
         revocation_list_credential, options, verkey, token
     )
-    redis.store_status_list(label, revocation_list_vc)
-    redis.store_status_entries(label, [0, lenght - 1], revocation_list_vc["id"])
+
+    data_key = f'{label}:status_lists:{revocation_list_vc["id"]}'.lower()
+    await askar.store_data(settings.ASKAR_KEY, data_key, revocation_list_vc)
+    data_key = f'{label}:status_entries:{revocation_list_vc["id"]}'.lower()
+    await askar.store_data(settings.ASKAR_KEY, data_key, [0, lenght - 1])
 
     # StatusList2021
     status_list_credential = status_list.create_credential(
         did, label, "StatusList2021", lenght
     )
     status_list_vc = agent.sign_json_ld(status_list_credential, options, verkey, token)
-    redis.store_status_list(label, status_list_vc)
-    redis.store_status_entries(label, [0, lenght - 1], status_list_vc["id"])
 
-    return {
-        "didDocument": did_doc
-    }
+    data_key = f'{label}:status_lists:{status_list_vc["id"]}'.lower()
+    await askar.store_data(settings.ASKAR_KEY, data_key, status_list_vc)
+    data_key = f'{label}:status_entries:{status_list_vc["id"]}'.lower()
+    await askar.store_data(settings.ASKAR_KEY, data_key, [0, lenght - 1])
+
+    return {"didDocument": did_doc}
 
 
 @router.get(
@@ -109,7 +110,8 @@ async def register(request_body: CreateDIDWebInput, request: Request):
 async def get_did(label: str):
     label = parse.quote(label.strip().lower())
     try:
-        did_doc = redis.get_did_doc(label)
+        data_key = f"{label}:did_document".lower()
+        did_doc = await askar.fetch_data(settings.ASKAR_KEY, data_key)
         return did_doc
     except:
         raise ValidationException(

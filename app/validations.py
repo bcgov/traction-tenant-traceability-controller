@@ -302,8 +302,11 @@ def credentials_status(request):
             status_code=400, content={"message": "Missing credentialStatus"}
         )
     # Bug in traceability test suite, they use the credentialstatus instead of credentialStatus key
-    # credential_status = request['credentialstatus']
-    credential_status = request["credentialStatus"]
+    credential_status = (
+        request["credentialstatus"]
+        if "credentialstatus" in request
+        else request["credentialStatus"]
+    )
     if not isinstance(credential_status, list):
         raise ValidationException(
             status_code=400,
@@ -350,21 +353,6 @@ def credentials_status(request):
                 status_code=400,
                 content={"message": "status must be 0 or 1"},
             )
-
-        # Bug in test, conformence sends purpose while interop send statusPurpose
-        # if "purpose" not in item and item["type"] == "StatusList2021Entry":
-        #     raise ValidationException(
-        #         status_code=400,
-        #         content={"message": "StatusList2021Entry must contain purpose"},
-        #     )
-
-        # if "purpose" in item and item["type"] == "StatusList2021Entry":
-        #     if not isinstance(item["purpose"], str):
-        #         raise ValidationException(
-        #             status_code=400,
-        #             content={"message": "purpose must be a string"},
-        #         )
-
         if "statusPurpose" not in item and item["type"] == "StatusList2021Entry":
             raise ValidationException(
                 status_code=400,
@@ -404,152 +392,5 @@ def credentials_verify(request):
         )
     if not valid_proof(proof):
         raise ValidationException(status_code=400, content={"message": "Invalid proof"})
-
-    # # Context
-    # if not "@context" in vc:
-    #     raise ValidationException(
-    #         status_code=400, content={"message": 'Missing "@context"'}
-    #     )
-    # if not isinstance(vc["@context"], list):
-    #     raise ValidationException(
-    #         status_code=400, content={"message": '"@context" should be an array'}
-    #     )
-    # if not all(isinstance(item, str) for item in vc["@context"]):
-    #     raise ValidationException(
-    #         status_code=400, content={"message": '"@context" items must be strings'}
-    #     )
-
-    # # Credential ID
-    # if "id" in vc:
-    #     if not isinstance(vc["id"], str):
-    #         raise ValidationException(
-    #             status_code=400, content={"message": "credential.id must be a string"}
-    #         )
-
-    # # Credential Type
-    # if not "type" in vc:
-    #     raise ValidationException(
-    #         status_code=400, content={"message": "Missing credential.type"}
-    #     )
-    # if not isinstance(vc["type"], list):
-    #     raise ValidationException(
-    #         status_code=400, content={"message": "credential.type must be an array"}
-    #     )
-    # if len(vc["type"]) == 0:
-    #     raise ValidationException(
-    #         status_code=400,
-    #         content={"message": "credential.type must have at least 1 type"},
-    #     )
-    # if not all(isinstance(item, str) for item in vc["type"]):
-    #     raise ValidationException(
-    #         status_code=400,
-    #         content={"message": "credential.type items must be strings"},
-    #     )
-
-    # # Credential Issuer
-    # if not "issuer" in vc:
-    #     raise ValidationException(
-    #         status_code=400, content={"message": "Missing credential.issuer"}
-    #     )
-    # if not isinstance(vc["issuer"], str) and not isinstance(vc["issuer"], dict):
-    #     raise ValidationException(
-    #         status_code=400,
-    #         content={"message": "credential.issuer field must be a string or a dict"},
-    #     )
-
-    # if isinstance(vc["issuer"], dict):
-    #     if "id" not in vc["issuer"]:
-    #         raise ValidationException(
-    #             status_code=400, content={"message": "Missing credential.issuer.id"}
-    #         )
-    #     if not isinstance(vc["issuer"]["id"], str):
-    #         raise ValidationException(
-    #             status_code=400,
-    #             content={"message": "credential.issuer.id must be a string"},
-    #         )
-
-    # # Issuance date
-    # if not "issuanceDate" in vc:
-    #     raise ValidationException(
-    #         status_code=400, content={"message": "Missing issuanceDate"}
-    #     )
-    # if not isinstance(vc["issuanceDate"], str):
-    #     raise ValidationException(
-    #         status_code=400, content={"message": "issuanceDate field must be a string"}
-    #     )
-    # if not valid_xml_timestamp(vc["issuanceDate"]):
-    #     raise ValidationException(
-    #         status_code=400,
-    #         content={"message": "issuanceDate not a xml date time string"},
-    #     )
-
-    # # Credential Subject
-    # if not "credentialSubject" in vc:
-    #     raise ValidationException(
-    #         status_code=400, content={"message": "Missing credentialSubject"}
-    #     )
-    # if not isinstance(vc["credentialSubject"], dict):
-    #     raise ValidationException(
-    #         status_code=400,
-    #         content={"message": "credentialSubject field must be an object"},
-    #     )
-    # if "id" in vc["credentialSubject"]:
-    #     if not isinstance(vc["credentialSubject"]["id"], str):
-    #         raise ValidationException(
-    #             status_code=400,
-    #             content={"message": "credentialSubject.id item must be a string"},
-    #         )
-
-    # # Proof
-    # if not "proof" in vc:
-    #     raise ValidationException(status_code=400, content={"message": "Missing proof"})
-    # if not isinstance(vc["proof"], dict):
-    #     raise ValidationException(
-    #         status_code=400, content={"message": "proof field must be an object"}
-    #     )
-    # if not "type" in vc["proof"]:
-    #     raise ValidationException(
-    #         status_code=400, content={"message": "Missing proof.type"}
-    #     )
-    # if not isinstance(vc["proof"]["type"], str):
-    #     raise ValidationException(
-    #         status_code=400, content={"message": "proof.type field must be a string"}
-    #     )
-    # if not valid_type(vc["proof"]["type"]):
-    #     raise ValidationException(
-    #         status_code=400,
-    #         content={"message": "proof.type must be a valid proof type"},
-    #     )
-
-    # if "created" in vc["proof"]:
-    #     if not isinstance(vc["proof"]["created"], str):
-    #         raise ValidationException(
-    #             status_code=400, content={"message": "proof.created must be a string"}
-    #         )
-    #     if not valid_xml_timestamp(vc["proof"]["created"]):
-    #         raise ValidationException(
-    #             status_code=400,
-    #             content={"message": "proof.created not a xml date time string"},
-    #         )
-
-    # if "verificationMethod" in vc["proof"]:
-    #     if not isinstance(vc["proof"]["verificationMethod"], str):
-    #         raise ValidationException(
-    #             status_code=400,
-    #             content={"message": "proof.verificationMethod field must be a string"},
-    #         )
-
-    # if "jws" in vc["proof"]:
-    #     if not isinstance(vc["proof"]["jws"], str):
-    #         raise ValidationException(
-    #             status_code=400, content={"message": "jws proof must be a string"}
-    #         )
-
-    # if "proofPurpose" in vc["proof"]:
-    #     if not isinstance(vc["proof"]["proofPurpose"], str):
-    #         raise ValidationException(
-    #             status_code=400,
-    #             content={"message": "proof.proofPurpose field must be a string"},
-    #         )
 
     return True
