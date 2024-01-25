@@ -6,12 +6,12 @@ import json, secrets
 
 
 class OAuthInput(BaseModel):
-    client_id: str = ''
-    client_secret: str = ''
+    client_id: str = ""
+    client_secret: str = ""
 
 
 class CreateDIDWebInput(BaseModel):
-    label: str = 'companyname'
+    label: str = "companyname"
 
 
 class IssueCredentialInput(BaseModel):
@@ -24,7 +24,7 @@ class VerifyCredentialInput(BaseModel):
 
 
 class UpdateCredentialStatusInput(BaseModel):
-    credentialId: str = ''
+    credentialId: str = ""
     credentialStatus: dict = {}
 
 
@@ -38,3 +38,32 @@ class CreatePresentationInput(BaseModel):
     )
     type: list = ["VerifiablePresentation", "TraceablePresentation"]
     verifiableCredential: list = [{}]
+
+
+class Credential(BaseModel):
+    context: list
+    type: list
+    id: str
+    issuer: Union(list, str)
+    issuanceDate: str
+    credentialStatus: dict
+    credentialSubject: dict
+
+
+class VerifiableCredential(BaseModel):
+    proof: dict
+
+
+class Presentation(BaseModel):
+    context: list
+    type: list
+    holder: Union(list, str)
+
+
+class VerifiablePresentation(BaseModel):
+    proof: dict
+
+
+class Proof(BaseModel):
+    type: str
+    verificationMethod: str

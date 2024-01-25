@@ -2,7 +2,7 @@ from fastapi import APIRouter, Form
 from typing import Annotated
 from config import settings
 from app.auth import handler
-from app.controllers import agent, redis
+from app.controllers import agent
 from app.validations import ValidationException
 import hashlib
 from time import time

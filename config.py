@@ -21,13 +21,18 @@ class Settings(BaseSettings):
     # Minimum lenght of 16KB
     STATUS_LIST_LENGHT: int = 131072
 
-    REDIS_HOST: str = os.environ["REDIS_HOST"]
-    REDIS_PORT: str = os.environ["REDIS_PORT"]
+    POSTGRES_USER: str = os.environ["POSTGRES_USER"]
+    POSTGRES_PASS: str = os.environ["POSTGRES_PASS"]
+    POSTGRES_HOST: str = os.environ["POSTGRES_HOST"]
+    POSTGRES_PORT: str = os.environ["POSTGRES_PORT"]
+    POSTGRES_DB: str = os.environ["POSTGRES_DB"]
+    POSTGRES_URI: str = f"postgres://{POSTGRES_USER}:{POSTGRES_PASS}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
 
-    JWT_ALGORITHM: str = os.environ["JWT_ALGORITHM"]
-    JWT_SECRET: str = os.environ["JWT_SECRET"]
-    
-    VERIFIER_AGENT: str = os.environ["VERIFIER_AGENT"]
+    ASKAR_KEY: str = os.environ["ASKAR_KEY"]
+
+    VERIFIER_ENDPOINT: str = os.environ["VERIFIER_ENDPOINT"]
+    HTTPS_VERIFIER: str = f"https://{VERIFIER_ENDPOINT}"
+    VERIFIER_API_KEY: str = os.environ["VERIFIER_API_KEY"]
 
 
 settings = Settings()

@@ -10,16 +10,21 @@ services:
     entrypoint: ["python", "main.py"]
     environment:
       WORKERS: ${WORKERS}
-      PORT: ${PORT}
+      TRACEABILITY_API_PORT: ${TRACEABILITY_API_PORT}
       TRACEABILITY_API_ENDPOINT: ${TRACEABILITY_API_ENDPOINT}
       TRACTION_API_URL: ${TRACTION_API_URL}
       TRACTION_TENANT_ID: ${TRACTION_TENANT_ID}
       TRACTION_API_KEY: ${TRACTION_API_KEY}
-      REDIS_HOST: ${REDIS_HOST}
-      REDIS_PORT: ${REDIS_PORT}
       JWT_SECRET: ${JWT_SECRET}
       JWT_ALGORITHM: ${JWT_ALGORITHM}
-      VERIFIER_AGENT: ${VERIFIER_AGENT}
+      VERIFIER_ENDPOINT: http://verifier-agent:8020
+      VERIFIER_API_KEY: ${VERIFIER_API_KEY}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASS: ${POSTGRES_PASS}
+      POSTGRES_DB: ${POSTGRES_PASS}
+      ASKAR_KEY: ${ASKAR_KEY}
     labels:
       - traefik.enable=true
       - traefik.http.routers.traceability-api.rule=Host(`${TRACEABILITY_API_ENDPOINT}`)
@@ -27,18 +32,57 @@ services:
       - traefik.http.routers.traceability-api.tls.certresolver=myresolver
       - traefik.http.services.traceability-api.loadbalancer.server.port=${TRACEABILITY_API_PORT}
 
+  verifier-agent:
+    # image: ghcr.io/hyperledger/aries-cloudagent-python:py3.9-0.10.4
+    build:
+      context: ../aries-cloudagent-python
+      dockerfile: docker/Dockerfile
+    container_name: verifier-agent
+    restart: unless-stopped
+    entrypoint: ["aca-py", "start"]
+    command: [
+      '--no-ledger',
+      '--endpoint', 'http://',
+      '--admin', '0.0.0.0', '8020',
+      '--outbound-transport', 'http',
+      '--inbound-transport', 'http', '0.0.0.0', '8021'
+    ]
+    environment:
+      ACAPY_ADMIN_API_KEY: ${VERIFIER_API_KEY}
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.verifier-agent.rule=Host(`${VERIFIER_ENDPOINT}`)
+      - traefik.http.routers.verifier-agent.entrypoints=websecure
+      - traefik.http.routers.verifier-agent.tls.certresolver=myresolver
+      - traefik.http.services.verifier-agent.loadbalancer.server.port=8020
+
   redis:
     image: redis:7.2-alpine3.18
     container_name: redis
     privileged: true
-    command: sh -c "./init.sh"
+    command: /usr/local/etc/redis/redis.conf
     restart: unless-stopped
-    ports:
-      - 6379:6379
+    # Uncomment port for local development
+    # ports:
+    #   - 6379:6379
+    environment:
+      REDIS_PASS: ${REDIS_PASS}
     volumes:
       - redis_data:/data
       - ./configs/redis.conf:/usr/local/etc/redis/redis.conf
-      - ./configs/redis_init.sh:/data/init.sh
+      # - ./configs/redis_init.sh:/data/init.sh
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASS}
 
   traefik:
     image: traefik:v2.10
@@ -61,3 +105,4 @@ services:
 
 volumes:
   redis_data:
+  postgres_data:

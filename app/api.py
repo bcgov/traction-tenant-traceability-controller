@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 from app.routers import authentication, identifiers, credentials, presentations
 from app.validations import ValidationException
 from config import settings
+import asyncio
 
 app = FastAPI(title=settings.PROJECT_TITLE, version=settings.PROJECT_VERSION)
 
