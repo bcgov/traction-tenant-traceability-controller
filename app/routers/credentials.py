@@ -63,10 +63,7 @@ async def issue_credential(label: str, request: Request):
         if status_type == "RevocationList2020Status":
             credential["@context"].append("https://w3id.org/vc-revocation-list-2020/v1")
         elif status_type == "StatusList2021Entry":
-            # original document unavailable https://w3id.org/vc/status-list/v1
-            credential["@context"].append(
-                "https://raw.githubusercontent.com/digitalbazaar/vc-status-list-context/main/contexts/vc-status-list-v1.jsonld"
-            )
+            credential["@context"].append("https://w3id.org/vc/status-list/2021/v1")
 
     # Limited to 1 verification_key per did and we use #verkey as id
     did = (
