@@ -1,12 +1,12 @@
 import requests
 from config import settings
-from app.validations import ValidationException
+from app.models.validations import ValidationException
 
 
-def request_token(tenant_id, api_key):
+def request_token():
     headers = {}
-    body = {"api_key": api_key}
-    endpoint = f"{settings.TRACTION_API_ENDPOINT}/multitenancy/tenant/{tenant_id}/token"
+    body = {"api_key": settings.TRACTION_API_KEY}
+    endpoint = f"{settings.TRACTION_API_ENDPOINT}/multitenancy/tenant/{settings.TRACTION_TENANT_ID}/token"
     r = requests.post(endpoint, headers=headers, json=body)
     try:
         token = r.json()["token"]
@@ -29,9 +29,10 @@ def verify_token(token):
         )
 
 
-def create_api_key(label, token):
+def create_api_key(did):
+    token = f'Bearer {request_token()}'
     headers = {"Authorization": token}
-    body = {"alias": label}
+    body = {"alias": did}
     endpoint = f"{settings.TRACTION_API_ENDPOINT}/tenant/authentications/api"
     r = requests.post(endpoint, headers=headers, json=body)
     try:
@@ -43,7 +44,8 @@ def create_api_key(label, token):
         )
 
 
-def create_did(did_method, key_type, did=None, token=None):
+def create_did(did_method, key_type, did=None):
+    token = f'Bearer {request_token()}'
     headers = {"Authorization": token}
     body = {"method": did_method, "options": {"key_type": key_type, "did": did}}
     endpoint = f"{settings.TRACTION_API_ENDPOINT}/wallet/did/create"
@@ -57,8 +59,9 @@ def create_did(did_method, key_type, did=None, token=None):
         )
 
 
-def resolve_did(did, token):
+def resolve_did(did):
     # Custom did resolve until acapy can parse array service.type
+    token = f'Bearer {request_token()}'
     did = did.replace("did:web:", "")
     did = did.replace(":", "/") if ":" in did else did + "/.well-known"
     did_endpoint = f"https://{did}/did.json"
@@ -83,7 +86,8 @@ def resolve_did(did, token):
     #     )
 
 
-def get_verkey(did, token):
+def get_verkey(did):
+    token = f'Bearer {request_token()}'
     headers = {"Authorization": token}
     endpoint = f"{settings.TRACTION_API_ENDPOINT}/wallet/did?did={did}"
     r = requests.get(endpoint, headers=headers)
@@ -96,7 +100,8 @@ def get_verkey(did, token):
         )
 
 
-def sign_json_ld(credential, options, verkey, token):
+def sign_json_ld(credential, options, verkey):
+    token = f'Bearer {request_token()}'
     headers = {"Authorization": token}
     body = {"doc": {"credential": credential, "options": options}, "verkey": verkey}
     endpoint = f"{settings.TRACTION_API_ENDPOINT}/jsonld/sign"
@@ -110,12 +115,13 @@ def sign_json_ld(credential, options, verkey, token):
         )
 
 
-def verify_json_ld(vc, verkey, token):
+def verify_json_ld(vc, verkey):
+    token = f'Bearer {request_token()}'
     headers = {"Authorization": token}
     body = {"doc": vc, "verkey": verkey}
     endpoint = f"{settings.TRACTION_API_ENDPOINT}/jsonld/verify"
+    r = requests.post(endpoint, headers=headers, json=body)
     try:
-        r = requests.post(endpoint, headers=headers, json=body)
         response = r.json()
         return response
     except:
@@ -124,10 +130,11 @@ def verify_json_ld(vc, verkey, token):
         )
 
 
-def issue_credential(credential, options, token):
+def issue_credential(credential, options):
+    token = f'Bearer {request_token()}'
     headers = {"Authorization": token}
     body = {"credential": credential, "options": options}
-    endpoint = f"{settings.TRACTION_API_ENDPOINT}/vc/ldp/issue"
+    endpoint = f"{settings.TRACTION_API_ENDPOINT}/vc/credentials/issue"
     r = requests.post(endpoint, headers=headers, json=body)
     try:
         vc = r.json()["vc"]
@@ -138,15 +145,16 @@ def issue_credential(credential, options, token):
         )
 
 
-def verify_credential(vc, token):
+def verify_credential(vc):
+    # token = f'Bearer {request_token()}'
     # headers = {"Authorization": token}
     headers = {"X-API-KEY": settings.VERIFIER_API_KEY}
-    body = {"vc": vc, "options": {}}
+    body = {"verifiableCredential": vc, "options": {}}
     # DID document can't contain traceability context
     # traceability service type must be a string (not an array)
-    endpoint = f"{settings.VERIFIER_ENDPOINT}/vc/ldp/verify"
+    endpoint = f"{settings.VERIFIER_ENDPOINT}/vc/credentials/verify"
+    r = requests.post(endpoint, headers=headers, json=body)
     try:
-        r = requests.post(endpoint, headers=headers, json=body)
         verified = r.json()
         return verified
     except:
@@ -155,22 +163,19 @@ def verify_credential(vc, token):
         )
 
 
-def verify_presentation(vp, token):
+def verify_presentation(vp):
+    # token = f'Bearer {request_token()}'
     # headers = {"Authorization": token}
     headers = {"X-API-KEY": settings.VERIFIER_API_KEY}
-    body = {"vp": vp, "options": {}}
+    body = {"verifiablePresentation": vp, "options": {}}
     # DID document can't contain traceability context
     # traceability service type must be a string (not an array)
-    endpoint = f"{settings.VERIFIER_ENDPOINT}/vc/ldp/verify"
+    endpoint = f"{settings.VERIFIER_ENDPOINT}/vc/presentations/verify"
+    r = requests.post(endpoint, headers=headers, json=body)
     try:
-        r = requests.post(endpoint, headers=headers, json=body)
         verified = r.json()
         return verified
     except:
         raise ValidationException(
             status_code=r.status_code, content={"message": r.text}
         )
-
-
-def create_presentation(presentation, token):
-    pass

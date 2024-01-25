@@ -2,10 +2,11 @@ from fastapi import APIRouter, Depends, Header, Request
 from fastapi.responses import JSONResponse
 from typing import Annotated
 from config import settings
-from app.controllers import agent
+from app.models.validations import ValidationException
+from app.controllers import askar, agent
 from app.auth.bearer import JWTBearer
-from app import validations
-from urllib import parse
+from app.auth.handler import is_authorized
+from ..utils import format_label
 
 router = APIRouter()
 
@@ -18,8 +19,15 @@ router = APIRouter()
 )
 async def create_presentation_auth(
     label: str,
+    request: Request,
     Authorization: Annotated[str | None, Header()] = None,
 ):
+    token = request.headers.get("Authorization").replace("Bearer ", "")
+    label = format_label(label)
+    if not is_authorized(token, label):
+        raise ValidationException(
+            status_code=401, content={"message": "Unauthorized"}
+        )
     return {}
 
 
@@ -31,8 +39,9 @@ async def create_presentation_auth(
 )
 async def sign_presentation(label: str, request: Request):
     token = request.headers.get("Authorization")
+    label = format_label(label)
+    await askar.verify_token(settings.ASKAR_KEY, label, token)
     agent.verify_token(token)
-    label = parse.quote(label.strip().lower())
 
     request = await request.json()
     # validations.presentations_sign(request)
@@ -66,8 +75,9 @@ async def sign_presentation(label: str, request: Request):
 )
 async def verify_presentation(label: str, request: Request):
     token = request.headers.get("Authorization")
+    label = format_label(label)
+    await askar.verify_token(settings.ASKAR_KEY, label, token)
     agent.verify_token(token)
-    label = parse.quote(label.strip().lower())
 
     request = await request.json()
     # validations.presentations_verify(request)
@@ -86,7 +96,12 @@ async def verify_presentation(label: str, request: Request):
 )
 async def start_presentation(
     label: str,
+    request: Request,
 ):
+    token = request.headers.get("Authorization")
+    label = format_label(label)
+    await askar.verify_token(settings.ASKAR_KEY, label, token)
+    agent.verify_token(token)
     return ""
 
 
@@ -98,5 +113,10 @@ async def start_presentation(
 )
 async def end_presentation(
     label: str,
+    request: Request,
 ):
+    token = request.headers.get("Authorization")
+    label = format_label(label)
+    await askar.verify_token(settings.ASKAR_KEY, label, token)
+    agent.verify_token(token)
     return ""
