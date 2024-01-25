@@ -11,8 +11,8 @@ class CreateDIDWebInput(BaseModel):
     @field_validator('label')
     @classmethod
     def validate_issuer(cls, value):
-        if CHECK_RE.match(value):
-            raise ValueError('No space')
+        if not CHECK_RE.match(value):
+            raise ValueError('must match regex [a-zA-Z0-9_-]+$')
         return value
 
 class IssueCredentialSchema(BaseModel):

@@ -10,45 +10,29 @@ This project aims to establish interoperability between the BC Gov Traction plat
 
 ### DID WEB
 
-A key component is linking a DID Web address with a stored keypair in aca-py. To achieve this, we leverage the DID Sov creation method and provide a user-defined `did:web` endpoint. The current formula to create this address is:
-
-```plaintext
-did:web:{domain}:organization:{label} -> did:web:example.com:organization:abc
-```
+A key component is linking a DID Web address with a stored keypair in aca-py. To achieve this, we leverage the web did creation method from aca-py and publish the did document.
 
 ### Resolving Identifiers
 
-To resolve DID Web identifiers, we utilize the `/resolver/resolve` endpoint in aca-py. However, please be aware of a known limitation with the `pydid` library that is currently under investigation. [Learn more](https://github.com/Indicio-tech/pydid/issues/81#issuecomment-1874290829).
+To resolve DID Web identifiers, we utilize the `/resolver/resolve` endpoint in aca-py.
 
+### Managing credentials
 
-### Issuing Credentials
+The traceability spec leverages the vc-api endpoints to issue, update and verify credentials.
 
-Until new aca-py routes are added to Traction, we leverage the `/jsonld/sign` endpoint.
+#### Credential Status
 
-
-### Verifying Credentials
-
-Similarly, until new aca-py routes are added to Traction, we leverage a separate acapy service directly. Two known limitations exist in the `pydid` and `pyld` libraries.
-
-
-### Credential Status
-
-`RevocationList2020` and `StatusList2021` are part of the spec. This layer is managed by this API for issuance, verification, and updates.
-
-
-### Presentations
-
-For issuance, we leverage the `/jsonld/sign` endpoint. For verification, we use the `/vc/ldp/verify` endpoint.
+Every web did will have a `StatusList2021` with revocation purpose for the credentials it issues.
 
 
 ## Deployment
 
 ### Pre-requisites
 
-- Docker / Docker Compose installed
-- Dedicated A record pointing to the IP of your deployment environment
-- A running aca-py instance for the verifier role (until the latest changes are pulled into the Traction environment)
-- A Traction tenant with a dedicated API key
+- Docker / docker-compose
+- An A record pointing to the public IP of your deployment environment. This will be the `did:web:` base.
+- HTTPS traffic enabled to 443
+- A Traction tenant_id and api_key
 
 ### Steps
 
@@ -56,37 +40,32 @@ For issuance, we leverage the `/jsonld/sign` endpoint. For verification, we use 
 # Clone the repository
 git clone https://github.com/OpSecId/aries-traceability.git
 
-# Clone the aca-py repository (required for verifying until the latest changes are pulled into the Traction environment)
+# Clone the aca-py repository
 git clone https://github.com/hyperledger/aries-cloudagent-python.git
 
-# Move to the project directory
-cd aries-traceability
-
-# Create the .env file and fill in the values
+# Move to the project directory and fill in the .env file values
+cd aries-traceability && \
 cp .env.example .env
 
-# Build the images
-docker-compose build
-
-# Deploy and open issues if you encounter a problem
-docker-compose up -d
+# Build and deploy
+docker-compose up --build --detach
 
 ```
 
 ## Creating an identifier
-This traceability api service will also enable a super admin to register new identifiers.
+A super admin can register new identifiers.
 
-To create an identifier, choose a label and use the following curl request as an example.
+To create an identifier, choose a label and use the following curl request.
 ```
-curl -X 'POST' \
-  'https://{endpoint}/register' \
-  -H 'accept: application/json' \
-  -H 'X-API-Key: {api_key}' \
-  -H 'Content-Type: application/json' \
-  -d '{
-  "label": "{label}",
-  "status_method": "RevocationList2020"
-}'
+source .env && curl -X 'POST' \
+  "https://$TRACEABILITY_DOMAIN_NAME/did" \
+  -H "accept: application/json" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: $TRACEABILITY_ADMIN_API_KEY" \
+  -d '{"label": "changeme"}'
 
 ```
-Your label must be an alphanumeric lowercase string. You may use dashes(-) and underscores(_).
+
+You will be returned with a resolvable did, a client_id and a client_secret.
+
+You now have all the information to load the Postman environment and control your DID to issue, manage and store credentials.
