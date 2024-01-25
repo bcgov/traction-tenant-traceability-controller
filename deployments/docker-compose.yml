@@ -1,0 +1,94 @@
+---
+version: '2'
+services:
+
+  # did-web-tenancy:
+  #   build:
+  #     context: ../services/did-web-tenancy
+  #   container_name: did-web-tenancy
+  #   restart: unless-stopped
+  #   # networks:
+  #   #   - ${DOCKER_NETWORK}
+  #   entrypoint: ["python", "main.py"]
+  #   environment:
+  #     TRACTION_API_ENDPOINT: ${TRACTION_API_ENDPOINT}
+  #     TENANCY_API_ENDPOINT: ${TENANCY_API_ENDPOINT}
+  #     TENANCY_ADMIN_API_KEY: ${TENANCY_ADMIN_API_KEY}
+  #     TRACEABILITY_API_ENDPOINT: ${TRACEABILITY_API_ENDPOINT}
+  #     REDIS_HOST: ${REDIS_HOST}
+  #     REDIS_PORT: ${REDIS_PORT}
+  #     REDIS_USER: ${REDIS_USER}
+  #     REDIS_PASS: ${REDIS_PASS}
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.docker.network=${DOCKER_NETWORK}"
+  #     - "traefik.http.routers.did-web-tenancy-secure.entrypoints=websecure"
+  #     - "traefik.http.routers.did-web-tenancy-secure.rule=Host(`${TRAEFIK_ENDPOINT_TENANCY}`)"
+  #     - "traefik.http.routers.did-web-tenancy-secure.service=did-web-tenancy"
+  #     - "traefik.http.services.did-web-tenancy.loadbalancer.server.port=8000"
+
+  # traceability-api:
+  #   build:
+  #     context: ../services/traceability-api
+  #   container_name: traceability-api
+  #   restart: unless-stopped
+  #   # networks:
+  #   #   - ${DOCKER_NETWORK}
+  #   entrypoint: ["python", "main.py"]
+  #   environment:
+  #     AGENT_WALLET_ID: ${TRACTION_WALLET_ID}
+  #     AGENT_WALLET_SECRET: ${TRACTION_WALLET_SECRET}
+  #     TRACTION_API_ENDPOINT: ${TRACTION_API_ENDPOINT}
+  #     TRACEABILITY_ADMIN_API_KEY: ${TRACEABILITY_ADMIN_API_KEY}
+  #     STATUS_LIST_API_ENDPOINT:  ${STATUS_LIST_API_ENDPOINT}
+  #     STATUS_LIST_ADMIN_API_KEY:  ${STATUS_LIST_ADMIN_API_KEY}
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.docker.network=${DOCKER_NETWORK}"
+  #     - "traefik.http.routers.traceability-api-secure.entrypoints=websecure"
+  #     - "traefik.http.routers.traceability-api-secure.rule=Host(`${TRAEFIK_ENDPOINT_TRACEABILITY}`)"
+  #     - "traefik.http.routers.traceability-api-secure.service=traceability-api"
+  #     - "traefik.http.services.traceability-api.loadbalancer.server.port=8000"
+
+  status-list:
+    build:
+      context: ../services/status-list
+    container_name: status-list
+    restart: unless-stopped
+    entrypoint: ["python", "main.py"]
+    # environment:
+    #   STATUS_LIST_ADMIN_API_KEY:  ${STATUS_LIST_ADMIN_API_KEY}
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.whoami.rule=Host(`${TRAEFIK_ENDPOINT_STATUSLIST}`)
+      - traefik.http.routers.whoami.entrypoints=websecure
+      - traefik.http.routers.whoami.tls.certresolver=myresolver
+
+  redis:
+    image: redis:7.2-alpine3.18
+    container_name: redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
+  traefik:
+    image: traefik:v2.10
+    container_name: traefik
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.myresolver.acme.tlschallenge=true
+      - --certificatesresolvers.myresolver.acme.email=${{TRAEFIK_EMAIL}}
+      - --certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json
+    ports:
+      - 443:443
+    volumes:
+      - ./letsencrypt:/letsencrypt
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+volumes:
+  redis_data:
