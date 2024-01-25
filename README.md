@@ -30,11 +30,12 @@ Every web did will have a `StatusList2021` with revocation purpose for the crede
 ### Pre-requisites
 
 - Docker / docker-compose
-- An A record pointing to the public IP of your deployment environment. This will be the `did:web:` base.
+- An A record pointing to the public IP of your deployment environment
+    - This will be the `did:web:` base
 - HTTPS traffic enabled to 443
-- A Traction tenant_id and api_key
+- A Traction `tenant_id` and `api_key`
 
-### Steps
+### Prep the environment
 
 ```bash
 # Clone the repository
@@ -47,16 +48,18 @@ git clone https://github.com/hyperledger/aries-cloudagent-python.git
 cd aries-traceability && \
 cp .env.example .env
 
-# Build and deploy
-docker-compose up --build --detach
+```
 
+### Build and deploy
+```bash
+docker-compose up --build --detach
 ```
 
 ## Creating an identifier
 A super admin can register new identifiers.
 
 To create an identifier, choose a label and use the following curl request.
-```
+```bash
 source .env && curl -X 'POST' \
   "https://$TRACEABILITY_DOMAIN_NAME/did" \
   -H "accept: application/json" \
@@ -66,6 +69,6 @@ source .env && curl -X 'POST' \
 
 ```
 
-You will be returned with a resolvable did, a client_id and a client_secret.
+You will be returned with a resolvable `did`, a `client_id` and a `client_secret`.
 
 You now have all the information to load the Postman environment and control your DID to issue, manage and store credentials.
