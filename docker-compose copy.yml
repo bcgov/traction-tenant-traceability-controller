@@ -14,9 +14,10 @@ services:
       TRACTION_API_ENDPOINT: ${TRACTION_API_ENDPOINT}
       TRACTION_TENANT_ID: ${TRACTION_TENANT_ID}
       TRACTION_API_KEY: ${TRACTION_API_KEY}
+
       JWT_SECRET: ${JWT_SECRET}
-      VERIFIER_ENDPOINT: ${VERIFIER_ENDPOINT}
-      VERIFIER_API_KEY: ${VERIFIER_API_KEY}
+
+      VERIFIER_ENDPOINT: http://verifier-agent:8020
       POSTGRES_URI: postgres://${POSTGRES_USER}:${POSTGRES_PASS}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
       ASKAR_KEY: ${ASKAR_KEY}
     labels:
@@ -26,29 +27,32 @@ services:
       - traefik.http.routers.traceability-api.tls.certresolver=myresolver
       - traefik.http.services.traceability-api.loadbalancer.server.port=8000
 
-  verifier-agent:
-    build:
-      context: ../aries-cloudagent-python
-      dockerfile: docker/Dockerfile
-    container_name: verifier-agent
-    restart: unless-stopped
-    entrypoint: ["aca-py", "start"]
-    command: [
-      '--no-ledger',
-      '--admin-api-key', '${VERIFIER_API_KEY}',
-      '--endpoint', 'http://verifier-agent:8021',
-      '--admin', '0.0.0.0', '8020',
-      '--outbound-transport', 'http',
-      '--inbound-transport', 'http', '0.0.0.0', '8021'
-    ]
+  # verifier-agent:
+  #   # image: ghcr.io/hyperledger/aries-cloudagent-python:py3.9-0.10.4
+  #   build:
+  #     context: ../aries-cloudagent-python
+  #     dockerfile: docker/Dockerfile
+  #   container_name: verifier-agent
+  #   restart: unless-stopped
+  #   # ports:
+  #   #   - 8020:8020
+  #   entrypoint: ["aca-py", "start"]
+  #   command: [
+  #     '--no-ledger',
+  #     '--admin-insecure-mode',
+  #     '--endpoint', 'http://localhost',
+  #     '--admin', '0.0.0.0', '8020',
+  #     '--outbound-transport', 'http',
+  #     '--inbound-transport', 'http', '0.0.0.0', '8021'
+  #   ]
 
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
     ports:
       - 5432:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
