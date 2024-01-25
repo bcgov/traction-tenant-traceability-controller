@@ -3,7 +3,7 @@ from config import settings
 from datetime import datetime
 from bitstring import BitArray
 from app.validations import ValidationException
-from app.controllers import redis
+from app.controllers import askar
 import zlib, base64
 
 
@@ -48,14 +48,15 @@ def create_credential(issuer, org_label, status_type, status_list_lenght):
     return status_list_credential
 
 
-def create_entry(org_label, status_type):
+async def create_entry(org_label, status_type):
     # https://www.w3.org/TR/vc-bitstring-status-list/#example-example-statuslistcredential
     if status_type == "RevocationList2020Status":
         status_list_id = f"{settings.HTTPS_BASE}/organization/{org_label}/credentials/status/RevocationList2020".lower()
     elif status_type == "StatusList2021Entry":
         status_list_id = f"{settings.HTTPS_BASE}/organization/{org_label}/credentials/status/StatusList2021".lower()
 
-    status_list_entries = redis.get_status_entries(org_label, status_list_id)
+    data_key = f"{org_label}:status_entries:{status_list_id}".lower()
+    status_list_entries = await askar.fetch_data(settings.ASKAR_KEY, data_key)
     list_idx = random.choice(
         [
             e
@@ -64,7 +65,8 @@ def create_entry(org_label, status_type):
         ]
     )
     status_list_entries.append(list_idx)
-    redis.store_status_entries(org_label, status_list_entries, status_list_id)
+    data_key = f"{org_label}:status_entries:{status_list_id}".lower()
+    await askar.update_data(settings.ASKAR_KEY, data_key, status_list_entries)
 
     if status_type == "RevocationList2020Status":
         credential_status = {
@@ -105,7 +107,7 @@ def get_credential_status(vc):
     return True if credential_status_bit == "1" else False
 
 
-def change_credential_status(vc, status_bit, org_label):
+async def change_credential_status(vc, status_bit, org_label):
     if vc["credentialStatus"]["type"] == "RevocationList2020Status":
         status_list_index = vc["credentialStatus"]["revocationListIndex"]
         status_list_id = vc["credentialStatus"]["revocationListCredential"]
@@ -113,7 +115,8 @@ def change_credential_status(vc, status_bit, org_label):
         status_list_index = vc["credentialStatus"]["statusListIndex"]
         status_list_id = vc["credentialStatus"]["statusListCredential"]
 
-    status_list_vc = redis.get_status_list(org_label, status_list_id)
+    data_key = f"{org_label}:status_lists:{status_list_id}".lower()
+    status_list_vc = await askar.fetch_data(settings.ASKAR_KEY, data_key)
 
     status_list_encoded = status_list_vc["credentialSubject"]["encodedList"]
 

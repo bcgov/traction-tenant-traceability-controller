@@ -16,6 +16,7 @@ def request_token(tenant_id, api_key):
             status_code=r.status_code, content={"message": r.text}
         )
 
+
 def verify_token(token):
     headers = {"Authorization": token}
     endpoint = f"{settings.TRACTION_API_ENDPOINT}/tenant"
@@ -99,8 +100,8 @@ def sign_json_ld(credential, options, verkey, token):
     headers = {"Authorization": token}
     body = {"doc": {"credential": credential, "options": options}, "verkey": verkey}
     endpoint = f"{settings.TRACTION_API_ENDPOINT}/jsonld/sign"
+    r = requests.post(endpoint, headers=headers, json=body)
     try:
-        r = requests.post(endpoint, headers=headers, json=body)
         vc = r.json()["signed_doc"]
         return vc
     except:
@@ -139,11 +140,28 @@ def issue_credential(credential, options, token):
 
 def verify_credential(vc, token):
     # headers = {"Authorization": token}
-    headers = {}
+    headers = {"X-API-KEY": settings.VERIFIER_API_KEY}
     body = {"vc": vc, "options": {}}
     # DID document can't contain traceability context
     # traceability service type must be a string (not an array)
-    endpoint = f"{settings.VERIFIER_AGENT}/vc/ldp/verify"
+    endpoint = f"{settings.VERIFIER_ENDPOINT}/vc/ldp/verify"
+    try:
+        r = requests.post(endpoint, headers=headers, json=body)
+        verified = r.json()
+        return verified
+    except:
+        raise ValidationException(
+            status_code=r.status_code, content={"message": r.text}
+        )
+
+
+def verify_presentation(vp, token):
+    # headers = {"Authorization": token}
+    headers = {"X-API-KEY": settings.VERIFIER_API_KEY}
+    body = {"vp": vp, "options": {}}
+    # DID document can't contain traceability context
+    # traceability service type must be a string (not an array)
+    endpoint = f"{settings.VERIFIER_ENDPOINT}/vc/ldp/verify"
     try:
         r = requests.post(endpoint, headers=headers, json=body)
         verified = r.json()

@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
 from config import settings
 from app.validations import ValidationException
-from app.controllers import agent, redis, status_list
+from app.controllers import agent, status_list
+from app.storage import askar
 from app import validations
 from app.auth.bearer import JWTBearer
 import uuid
@@ -22,7 +23,8 @@ async def get_credential(label: str, credential_id: str, request: Request):
     agent.verify_token(token)
     label = parse.quote(label.strip().lower())
     try:
-        credential = redis.get_credential(label, credential_id)
+        data_key = f"{label}:credentials:{credential_id}".lower()
+        credential = await askar.fetch_data(settings.ASKAR_KEY, data_key)
     except:
         raise ValidationException(
             status_code=404,
@@ -48,19 +50,7 @@ async def issue_credential(label: str, request: Request):
     credential = request["credential"]
     options = request["options"]
 
-    # Derive verification from issuer field
-    did = (
-        credential["issuer"]
-        if isinstance(credential["issuer"], str)
-        else credential["issuer"]["id"]
-    )
-
-    # With the current method of registering did:web in aca-py (leveraging sov keys)
-    # we are limited to 1 verification_key per did
-    # It's id is #verkey for the timebeing
-    options["verificationMethod"] = f"{did}#verkey"
-
-    # Generate a credential id
+    # Generate a credential id if none is provided
     if "id" not in credential:
         credential["id"] = f"urn:uuid:{str(uuid.uuid1())}"
 
@@ -68,7 +58,7 @@ async def issue_credential(label: str, request: Request):
     if "credentialStatus" in options:
         credential_status = options.pop("credentialStatus")
         status_type = credential_status["type"]
-        credential_status = status_list.create_entry(label, status_type)
+        credential_status = await status_list.create_entry(label, status_type)
         credential["credentialStatus"] = credential_status
         if status_type == "RevocationList2020Status":
             credential["@context"].append("https://w3id.org/vc-revocation-list-2020/v1")
@@ -77,6 +67,14 @@ async def issue_credential(label: str, request: Request):
             credential["@context"].append(
                 "https://raw.githubusercontent.com/digitalbazaar/vc-status-list-context/main/contexts/vc-status-list-v1.jsonld"
             )
+
+    # Limited to 1 verification_key per did and we use #verkey as id
+    did = (
+        credential["issuer"]
+        if isinstance(credential["issuer"], str)
+        else credential["issuer"]["id"]
+    )
+    options["verificationMethod"] = f"{did}#verkey"
 
     # Backwards compatibility with old json-ld routes in traction,
     # doesn't support created option and requires proofPurpose
@@ -95,7 +93,8 @@ async def issue_credential(label: str, request: Request):
     #     options["proofType"] = "Ed25519Signature2018"
     # vc = agent.issue_credential(credential, options, token)
 
-    redis.store_credential(label, vc)
+    data_key = f'{label}:credentials:{credential["id"]}'.lower()
+    await askar.store_data(settings.ASKAR_KEY, data_key, credential)
 
     return JSONResponse(status_code=201, content={"verifiableCredential": vc})
 
@@ -120,18 +119,13 @@ async def verify_credential(label: str, request: Request):
     if "credentialStatus" in vc:
         status = status_list.get_credential_status(vc)
         if status:
-            # TODO, give proper formatted message
             verified = {
-                'verified': False,
-                "verifications": {
-                    'Revocation': 'bad'
-                    }
-                }
-            
-            raise ValidationException(
-                status_code=400, content={"message": "Credential is revoked"}
-            )
-            
+                "verified": False,
+                "verifications": [{"title": "Revocation", "status": "bad"}],
+            }
+
+            return JSONResponse(status_code=200, content=verified)
+
     verified = agent.verify_credential(vc, token)
 
     return JSONResponse(status_code=200, content=verified)
@@ -152,7 +146,9 @@ async def update_credential_status(label: str, request: Request):
     validations.credentials_status(request)
 
     credential_id = request["credentialId"]
-    vc = redis.get_credential(label, credential_id)
+    data_key = f"{label}:credentials:{credential_id}".lower()
+    vc = await askar.fetch_data(settings.ASKAR_KEY, data_key)
+
     did = vc["issuer"] if isinstance(vc["issuer"], str) else vc["issuer"]["id"]
     verkey = agent.get_verkey(did, token)
     options = {
@@ -162,15 +158,16 @@ async def update_credential_status(label: str, request: Request):
     for status in request["credentialStatus"]:
         status_type = status["type"]
         status_bit = status["status"]
-        status_list_credential = status_list.change_credential_status(
+        status_list_credential = await status_list.change_credential_status(
             vc, status_bit, label
         )
         status_list_vc = agent.sign_json_ld(
             status_list_credential, options, verkey, token
         )
-        redis.store_status_list(label, status_list_vc)
+        data_key = f'{label}:status_lists:{status_list_vc["id"]}'.lower()
+        await askar.update_data(settings.ASKAR_KEY, data_key, status_list_vc)
 
-    return JSONResponse(status_code=200, content={'message': 'Status updated'})
+    return JSONResponse(status_code=200, content={"message": "Status updated"})
 
 
 @router.get(
@@ -182,7 +179,8 @@ async def get_status_list_credential(label: str, status_list_id: str, request: R
     label = parse.quote(label.strip().lower())
     status_list_id = f"{settings.HTTPS_BASE}/organization/{label}/credentials/status/{status_list_id}".lower()
     try:
-        status_list_vc = redis.get_status_list(label, status_list_id)
+        data_key = f"{label}:status_lists:{status_list_id}".lower()
+        status_list_vc = await askar.fetch_data(settings.ASKAR_KEY, data_key)
     except:
         return ValidationException(
             status_code=404,
