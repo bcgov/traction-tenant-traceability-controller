@@ -72,3 +72,21 @@ docker-compose build
 docker-compose up -d
 
 ```
+
+## Creating an identifier
+This traceability api service will also enable a super admin to register new identifiers.
+
+To create an identifier, choose a label and use the following curl request as an example.
+```
+curl -X 'POST' \
+  'https://{endpoint}/register' \
+  -H 'accept: application/json' \
+  -H 'X-API-Key: {api_key}' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "label": "{label}",
+  "status_method": "RevocationList2020"
+}'
+
+```
+Your label must be an alphanumeric lowercase string. You may use dashes(-) and underscores(_).

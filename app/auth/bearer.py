@@ -1,6 +1,6 @@
 from fastapi import Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from app.validations import ValidationException
+from app.models.validations import ValidationException
 from .handler import decodeJWT
 
 
@@ -17,10 +17,10 @@ class JWTBearer(HTTPBearer):
                 raise ValidationException(
                     status_code=401, content={"message": "Invalid or expired token"}
                 )
-            # if not self.verify_jwt(credentials.credentials):
-            #     raise ValidationException(
-            #         status_code=401, content={"message": "Invalid or expired token"}
-            #     )
+            if not self.verify_jwt(credentials.credentials):
+                raise ValidationException(
+                    status_code=401, content={"message": "Invalid or expired token"}
+                )
             return credentials.credentials
         else:
             raise ValidationException(

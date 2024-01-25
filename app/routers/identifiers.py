@@ -1,105 +1,70 @@
-from fastapi import APIRouter, Depends, Request
-from fastapi.responses import JSONResponse
-from app.models import CreateDIDWebInput
-from app.controllers import agent, status_list, did_web
-from app.storage import askar
-from app.validations import ValidationException
+from fastapi import APIRouter, Depends, Request, Security
+from app.models.web_requests import CreateDIDWebInput
+from app.models.did_document import DidDocument
+from app.models.validations import ValidationException
+from app.controllers import askar, agent, status_list
 from config import settings
-from app.models import *
 from app.auth.bearer import JWTBearer
-from app.auth.handler import decodeJWT
-from urllib import parse
+from app.auth.handler import get_api_key, is_authorized
+from ..utils import format_label
+import hashlib, uuid
 
 router = APIRouter()
 
 
 @router.post(
-    "/register",
+    "/did",
     tags=["Identifiers"],
-    dependencies=[Depends(JWTBearer())],
     summary="Create Web DID",
 )
-async def register(request_body: CreateDIDWebInput, request: Request):
-    token = request.headers.get("Authorization")
-    agent.verify_token(token)
+async def register(request_body: CreateDIDWebInput, request: Request, api_key: str = Security(get_api_key)):
 
     request_body = await request.json()
 
-    # Remove spacing and lowercase the label
-    label = parse.quote(request_body["label"].strip().lower())
-    
     # Create a did:web identifier and register with traction
+    label = format_label(request_body["label"])
     did = f"{settings.DID_WEB_BASE}:organization:{label}"
-    verkey = agent.create_did("sov", "ed25519", did, token)
+    verkey = agent.create_did("sov", "ed25519", did)
 
     # Create and store did document
-    did_doc = {
-        # This should have traceability context uncommented, currently creates an error when framing with pyld
-        "@context": [
-            "https://www.w3.org/ns/did/v1",
-            "https://w3id.org/security/v2",
-            # "https://w3id.org/traceability/v1",
-        ],
-        "id": did,
-        "alsoKnownAs": [],
-        "authentication": [f"{did}#verkey"],
-        "assertionMethod": [f"{did}#verkey"],
-        "verificationMethod": [
-            {
-                "id": f"{did}#verkey",
-                "type": "Ed25519VerificationKey2018",
-                "controller": did,
-                "publicKeyBase58": verkey,
-            }
-        ],
-        "service": [
-            {
-                "id": f"{did}#traceability-api",
-                # This should be an array, currently creates an error when parsing with pydid
-                # ["TraceabilityAPI"]
-                "type": "TraceabilityAPI",
-                "serviceEndpoint": f"{settings.HTTPS_BASE}/organization/{label}",
-            }
-        ],
-    }
+    did_doc = DidDocument(id=did)
+    did_doc.add_verkey(verkey)
+    did_doc.add_service('TraceabilityAPI')
 
-    data_key = f"{label}:did_document".lower()
-    await askar.store_data(settings.ASKAR_KEY, data_key, did_doc)
+    data_key = f"{label}:did_document"
+    await askar.store_data(settings.ASKAR_KEY, data_key, dict(did_doc))
 
-    # Status list vc prep
-    verkey = agent.get_verkey(did, token)
+    # Publish Status List VC
+    status_list_id = f"{settings.HTTPS_BASE}/organization/{label}/credentials/status/revocation"
+    status_list_lenght = settings.STATUS_LIST_LENGHT
+    status_list_credential = status_list.create_credential(
+        did, status_list_id, status_list_lenght
+    )
     options = {
         "verificationMethod": f"{did}#verkey",
         "proofPurpose": "AssertionMethod",
     }
-    # Minimum bitstring lenght of 16KB
-    lenght = settings.STATUS_LIST_LENGHT
-
-    # RevocationList2020
-    revocation_list_credential = status_list.create_credential(
-        did, label, "RevocationList2020", lenght
-    )
-    revocation_list_vc = agent.sign_json_ld(
-        revocation_list_credential, options, verkey, token
+    verkey = agent.get_verkey(did)
+    status_list_vc = agent.sign_json_ld(
+        status_list_credential, options, verkey
     )
 
-    data_key = f'{label}:status_lists:{revocation_list_vc["id"]}'.lower()
-    await askar.store_data(settings.ASKAR_KEY, data_key, revocation_list_vc)
-    data_key = f'{label}:status_entries:{revocation_list_vc["id"]}'.lower()
-    await askar.store_data(settings.ASKAR_KEY, data_key, [0, lenght - 1])
-
-    # StatusList2021
-    status_list_credential = status_list.create_credential(
-        did, label, "StatusList2021", lenght
-    )
-    status_list_vc = agent.sign_json_ld(status_list_credential, options, verkey, token)
-
-    data_key = f'{label}:status_lists:{status_list_vc["id"]}'.lower()
+    data_key = f"{label}:status_list"
     await askar.store_data(settings.ASKAR_KEY, data_key, status_list_vc)
-    data_key = f'{label}:status_entries:{status_list_vc["id"]}'.lower()
-    await askar.store_data(settings.ASKAR_KEY, data_key, [0, lenght - 1])
+    data_key = f"{label}:status_entries"
+    await askar.store_data(settings.ASKAR_KEY, data_key, [0, status_list_lenght - 1])
 
-    return {"didDocument": did_doc}
+    # Generate client credentials and store hash
+    client_id = hashlib.md5(label.encode()).hexdigest()
+    client_secret = uuid.uuid4()
+    client_hash = str(uuid.uuid5(client_secret, client_id))
+    await askar.append_client_hash(settings.ASKAR_KEY, client_hash)
+
+    return {
+        "did": did,
+        "client_id": client_id, 
+        "client_secret": client_secret, 
+        }
 
 
 @router.get(
@@ -108,7 +73,7 @@ async def register(request_body: CreateDIDWebInput, request: Request):
     summary="Get a DID's latest keys, services and capabilities",
 )
 async def get_did(label: str):
-    label = parse.quote(label.strip().lower())
+    label = format_label(label)
     try:
         data_key = f"{label}:did_document".lower()
         did_doc = await askar.fetch_data(settings.ASKAR_KEY, data_key)
@@ -127,8 +92,11 @@ async def get_did(label: str):
     summary="Get a DID's latest keys, services and capabilities",
 )
 async def get_did(label: str, did: str, request: Request):
-    token = request.headers.get("Authorization")
-    agent.verify_token(token)
+    token = request.headers.get("Authorization").replace("Bearer ", "")
+    if not is_authorized(token, label):
+        raise ValidationException(
+            status_code=401, content={"message": "Unauthorized"}
+        )
 
     did = did.replace("%3", ":").strip().lower()
     if "urn:uuid:" in did:
@@ -140,7 +108,6 @@ async def get_did(label: str, did: str, request: Request):
         raise ValidationException(
             status_code=400, content={"message": "Invalid DID format"}
         )
-
-    did_doc = agent.resolve_did(did, token)
+    did_doc = agent.resolve_did(did)
 
     return {"didDocument": did_doc}
