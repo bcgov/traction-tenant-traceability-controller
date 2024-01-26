@@ -114,7 +114,7 @@ A super admin can register new identifiers.
 
 To create an identifier, choose a label and run the provided script.
 ```bash
-./scripts/register_did.sh my_did
+./scripts/register_did.sh my_did_label
 ```
 
 You will be returned with a resolvable `did` and all the information you need to load the Postman environment. You can now control your did to issue, manage and verify credentials.
