@@ -1,11 +1,13 @@
 from typing import Union, List, Dict
 from pydantic import BaseModel, Field, AliasChoices, field_validator
 from app.validations import (
+    ValidationException,
     valid_xml_timestamp,
     valid_credential_subject,
     valid_issuer,
     valid_type,
     valid_context_v1,
+    valid_status_update_value,
 )
 from .proofs import Proof
 
@@ -28,7 +30,7 @@ class Credential(BaseModel):
 
     @field_validator("type")
     @classmethod
-    def validate_type(cls, value):
+    def validate_credential_type(cls, value):
         valid_type(value)
         if value[0] != "VerifiableCredential":
             raise ValueError("First value must be VerifiableCredential")
@@ -70,7 +72,7 @@ class VerifiableCredential(Credential):
 
     @field_validator("type")
     @classmethod
-    def validate_type(cls, value):
+    def validate_vc_type(cls, value):
         valid_type(value)
         if value[0] != "VerifiableCredential":
             raise ValueError("First value must be VerifiableCredential")
@@ -104,6 +106,12 @@ class VerifiableCredential(Credential):
 class CredentialStatusOption(BaseModel):
     type: str = Field()
 
+    @field_validator("type")
+    @classmethod
+    def validate_status_option_type(cls, value):
+        valid_type(value)
+        return value
+
 
 class IssuanceOptions(BaseModel):
     type: str = Field(validation_alias=AliasChoices("proofType", "type"))
@@ -114,7 +122,7 @@ class IssuanceOptions(BaseModel):
 
     @field_validator("type")
     @classmethod
-    def validate_type(cls, value):
+    def validate_signature_type(cls, value):
         valid_type(value)
         return value
 
@@ -129,3 +137,15 @@ class CredentialStatusUpdateItem(BaseModel):
     type: str = Field()
     status: str = Field()
     statusPurpose: str = Field(None)
+
+    @field_validator("type")
+    @classmethod
+    def validate_status_entry_type(cls, value):
+        valid_type(value)
+        return value
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, value):
+        valid_status_update_value(value)
+        return value

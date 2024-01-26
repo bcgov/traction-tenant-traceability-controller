@@ -11,7 +11,7 @@ from app.utils import format_label, did_from_label, new_client
 router = APIRouter()
 
 
-@router.post("/did", tags=["Identifiers"], summary="Create Web DID")
+@router.post("/register/did", tags=["Identifiers"], summary="Create Web DID")
 async def register(
     request_body: CreateDIDWebInput,
     request: Request,

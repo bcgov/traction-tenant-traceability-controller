@@ -113,13 +113,11 @@ def get_credential_status(vc, status_type):
     return True if credential_status_bit == "1" else False
 
 
-async def change_credential_status(vc, status_bit, label, status_type):
+async def change_credential_status(vc, status_bit, label, list_type):
     
-    if status_type == 'RevocationList2020Status':
-        list_type = 'RevocationList2020'
+    if list_type == 'RevocationList2020':
         status_list_index = vc["credentialStatus"]["revocationListIndex"]
-    elif status_type == 'StatusList2021Entry':
-        list_type = 'StatusList2021'
+    elif list_type == 'StatusList2021':
         status_list_index = vc["credentialStatus"]["statusListIndex"]
         
     data_key = f"{label}:status_lists:{list_type}"
@@ -134,7 +132,15 @@ async def change_credential_status(vc, status_bit, label, status_type):
 
     status_list_vc["credentialSubject"]["encodedList"] = status_list_encoded
 
+
+    did = vc["issuer"] if isinstance(vc["issuer"], str) else vc["issuer"]["id"]
+    verkey = agent.get_verkey(did)
+    options = {
+        "verificationMethod": f"{did}#verkey",
+        "proofPurpose": "AssertionMethod",
+    }
     # Remove old proof
     status_list_vc.pop("proof")
+    new_status_list_vc = agent.sign_json_ld(status_list_vc, options, verkey)
 
-    return status_list_vc
+    return new_status_list_vc

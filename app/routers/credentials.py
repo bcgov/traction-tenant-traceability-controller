@@ -68,7 +68,7 @@ async def issue_credential(
             credential["credentialStatus"] = await status_list.create_entry(
                 label, "RevocationList2020"
             )
-    options.pop("credentialStatus")
+        options.pop("credentialStatus")
     
     issuer_did = (
         credential["issuer"]
@@ -89,8 +89,6 @@ async def issue_credential(
         options.pop("created")
     options["proofPurpose"] = "assertionMethod"
     verkey = agent.get_verkey(did)
-    print(credential)
-    print(options)
     vc = agent.sign_json_ld(credential, options, verkey)
 
     # New vc-api routes
@@ -137,7 +135,6 @@ async def verify_credential(
         time_now = datetime.now(timezone)
         if expiration_time < time_now:
             verification["errors"].append("expired")
-    print(vc)
     verified = agent.verify_credential(vc)
     verification["checks"].append("proof")
     try:
@@ -147,11 +144,11 @@ async def verify_credential(
             verification["verified"] = True
         else:
             verification["verified"] = False
-        return JSONResponse(status_code=200, content=verified)
+        return JSONResponse(status_code=200, content=verification)
     except:
         verification["verified"] = False
         verification["errors"].append("verifier error")
-        return JSONResponse(status_code=200, content=verified)
+        return JSONResponse(status_code=200, content=verification)
 
 
 @router.post(
@@ -166,25 +163,38 @@ async def update_credential_status(
     label = is_authorized(label, request)
     request_body = request_body.dict(exclude_none=True)
     credential_id = request_body["credentialId"]
-    statuses = request_body["credentialStatus"]
+    credential_status = request_body["credentialStatus"]
+    
+    # We find which status bit to update
+    status_bit = credential_status[0]["status"]
+    status_type = credential_status[0]['type']
+    if credential_status[0]['type'] in ['StatusList2021Entry'] and 'statusPurpose' not in credential_status:
+        raise ValidationException(status_code=400, content={"message": "Missing purpose"})
 
+    # We fetch the issued credential based on the credential ID
     data_key = f"{label}:credentials:{credential_id}".lower()
     vc = await askar.fetch_data(settings.ASKAR_KEY, data_key)
-
-    did = vc["issuer"] if isinstance(vc["issuer"], str) else vc["issuer"]["id"]
-    verkey = agent.get_verkey(did)
-    options = {
-        "verificationMethod": f"{did}#verkey",
-        "proofPurpose": "AssertionMethod",
-    }
-    for status in statuses:
-        status_bit = status["status"]
-        status_list_credential = await status_list.change_credential_status(
-            vc, status_bit, label
+    
+    # Make sure the payload refers to the correct status list type
+    if vc['credentialStatus']['type'] != status_type:
+        return ValidationException(
+            status_code=400,
+            content={"message": f"Status list type mismatch"},
         )
-        status_list_vc = agent.sign_json_ld(status_list_credential, options, verkey)
-        data_key = f"{label}:status_list"
-        await askar.update_data(settings.ASKAR_KEY, data_key, status_list_vc)
+    if status_type == 'RevocationList2020Status':
+        list_type = 'RevocationList2020'
+        new_status_list_vc = await status_list.change_credential_status(
+            vc, status_bit, label, list_type
+        )
+    elif status_type == 'StatusList2021Entry':
+        list_type = 'StatusList2021'
+        new_status_list_vc = await status_list.change_credential_status(
+            vc, status_bit, label, list_type
+        )
+    
+    # Store the new credential
+    data_key = f"{label}:status_lists:{list_type}"
+    await askar.update_data(settings.ASKAR_KEY, data_key, new_status_list_vc)
 
     return JSONResponse(status_code=200, content={"message": "Status updated"})
 
@@ -202,6 +212,6 @@ async def get_status_list_credential(label: str, list_type: str):
     except:
         return ValidationException(
             status_code=404,
-            content={"message": f"Status list not found"},
+            content={"message": "Status list not found"},
         )
     return status_list_vc
