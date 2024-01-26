@@ -5,8 +5,7 @@
 - [Functionalities](#functionalities)
   - [OAuth](#oauth)
   - [DID WEB](#did-web)
-    - [Register](#register-did-web)
-    - [Resolve](#resolve-did-web)
+    - [Register and Resolve](#register-and-resolve)
   - [Credentials](#credentials)
     - [Issuance](#credential-issuance)
     - [Status](#credential-status)
@@ -20,19 +19,17 @@
 
 ### OAuth
 
-We provide a token endpoint for clients to request their tokens. This is how most exchanges are conducted.
+We offer a dynamic token endpoint, inviting clients to seamlessly request their access tokens. This is the pivotal hub where the majority of exchanges come to life, fostering a streamlined and efficient interaction.
 
 ### DID WEB
 
-The traceability spec relies on [did:web](https://w3c-ccg.github.io/did-method-web/) identifiers to exchange data.
+The traceability specification hinges on the utilization of [did:web](https://w3c-ccg.github.io/did-method-web/) identifiers, providing a robust foundation for seamless data exchange.
 
-#### Register
+#### Register and Resolve
 
-We register a `did:web` address in aca-py through the `/wallets/did/create` endpoint. We will store and publish the resulting document based on the created keypair.
+We seamlessly register a `did:web` address within aca-py using the `/wallets/did/create` endpoint, ensuring a secure keypair is generated. Subsequently, we store and publish the resulting document, laying the groundwork for further exchanges.
 
-#### Resolve
-
-We need the ability to resolve other `did:web` addresses. To do so we leverage the `/resolver/resolve` endpoint in aca-py.
+To resolve other `did:web` addresses, we use the `/resolver/resolve` endpoint in aca-py.
 
 ### Credentials
 
@@ -44,24 +41,23 @@ Hitting the `/credentials/issue` service endpoint will issue a credential.
 
 #### Status
 
-Every web did will have a [`StatusList2021`](https://www.w3.org/TR/vc-bitstring-status-list/) and a [`RevocationList2020`](https://w3c-ccg.github.io/vc-status-rl-2020/) credential available for status management.
+Each web did is equipped with both a [`StatusList2021`](https://www.w3.org/TR/vc-bitstring-status-list/) and a [`RevocationList2020`](https://w3c-ccg.github.io/vc-status-rl-2020/) credential, serving as essential components for effective status management.
 **StatusList2021 was renamed to BitstringStatusList**
 
 #### Verification
 
-On top of the aca-py verifications, we will also verify the `expirationDate` as well as the `credentialStatus` of the VCs.
+In addition to aca-py verifications, we will conduct thorough checks on the `expirationDate` and `credentialStatus` of the Verified Credentials (VCs).
 
 #### Storage
 
-We store the issued credential in a postgres DB with the use of [aries-askar](https://github.com/hyperledger/aries-askar). This is to ensure we can update statuses of issued credentials.
+We securely store the issued credential in a PostgreSQL database, leveraging [aries-askar](https://github.com/hyperledger/aries-askar). This approach ensures the ability to efficiently update the statuses of issued credentials as needed.
 
 ### Presentations
 
 #### Exchanges
 
-Presentation exchanges happend over an [oauth authentication channel](https://w3c-ccg.github.io/traceability-interop/draft/#presentation-authentication). A submiter will request a token and send a presentation to the `/presentations` service endpoint. 
+Presentation exchanges occur over an [OAuth authentication channel](https://w3c-ccg.github.io/traceability-interop/draft/#presentation-authentication). A submitter initiates the process by requesting a token and subsequently sends a presentation to the `/presentations` service endpoint.
 
 #### Workflows
 
-Presentations can be linked to a [workflow](https://w3c-ccg.github.io/traceability-vocab/#workflow) instance ID. These ID's serve to logically group contained credentials. The same ID might be used over several presentations depending on the buisness case.
-
+Presentations have the capability to be linked to a [workflow](https://w3c-ccg.github.io/traceability-vocab/#workflow) instance ID. These IDs play a crucial role in logically grouping the credentials within, allowing for a structured organization. Depending on the specific business case, the same ID might be employed across multiple presentations.
