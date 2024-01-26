@@ -3,6 +3,7 @@
 ## Table of Contents
 
 - [Functionalities](#functionalities)
+  - [OAuth](#oauth)
   - [DID WEB](#did-web)
     - [Register](#register-did-web)
     - [Resolve](#resolve-did-web)
@@ -17,11 +18,13 @@
 
 ## Functionalities
 
-Here is an overview of the core features of the Traceability spec implemented.
+### OAuth
+
+We provide a token endpoint for clients to request their tokens. This is how most exchanges are conducted.
 
 ### DID WEB
 
-The traceability spec relies on `did:web` identifiers to exchange data.
+The traceability spec relies on [did:web](https://w3c-ccg.github.io/did-method-web/) identifiers to exchange data.
 
 #### Register
 
@@ -33,15 +36,16 @@ We need the ability to resolve other `did:web` addresses. To do so we leverage t
 
 ### Credentials
 
-The traceability spec leverages the vc-api endpoints to issue, update and verify credentials.
+**The traceability spec leverages the [vc-api](https://w3c-ccg.github.io/vc-api/) spec.**
 
 #### Issuance
 
-Hitting the `/credentials/issue` service endpoint will issue a credential using the `` crypto suite.
+Hitting the `/credentials/issue` service endpoint will issue a credential.
 
 #### Status
 
-Every web did will have a `StatusList2021` and a `RevocationList202` credential available for status management.
+Every web did will have a [`StatusList2021`](https://www.w3.org/TR/vc-bitstring-status-list/) and a [`RevocationList2020`](https://w3c-ccg.github.io/vc-status-rl-2020/) credential available for status management.
+**StatusList2021 was renamed to BitstringStatusList**
 
 #### Verification
 
@@ -49,15 +53,15 @@ On top of the aca-py verifications, we will also verify the `expirationDate` as 
 
 #### Storage
 
-We store the issued credential in a postgres DB with the use of aries-askar. This is to ensure we can update statuses of issued credentials.
+We store the issued credential in a postgres DB with the use of [aries-askar](https://github.com/hyperledger/aries-askar). This is to ensure we can update statuses of issued credentials.
 
 ### Presentations
 
 #### Exchanges
 
-Presentation exchanges happend over an oauth communication. A submiter will request a token and send a presentation to the `/presentations` service endpoint. 
+Presentation exchanges happend over an [oauth authentication channel](https://w3c-ccg.github.io/traceability-interop/draft/#presentation-authentication). A submiter will request a token and send a presentation to the `/presentations` service endpoint. 
 
 #### Workflows
 
-Presentations can be linked to a workflow instance ID. These ID's serve to logically group contained credentials. The same ID might be used over several presentations depending on the buisness case.
+Presentations can be linked to a [workflow](https://w3c-ccg.github.io/traceability-vocab/#workflow) instance ID. These ID's serve to logically group contained credentials. The same ID might be used over several presentations depending on the buisness case.
 
