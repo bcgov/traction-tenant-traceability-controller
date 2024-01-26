@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Header, Request
 from fastapi.responses import JSONResponse
 from typing import Annotated
 from config import settings
-from app.models.validations import ValidationException
+from app.validations import ValidationException
 from app.controllers import askar, agent
 from app.auth.bearer import JWTBearer
 from app.auth.handler import is_authorized
@@ -22,13 +22,12 @@ async def create_presentation_auth(
     request: Request,
     Authorization: Annotated[str | None, Header()] = None,
 ):
-    token = request.headers.get("Authorization").replace("Bearer ", "")
-    label = format_label(label)
-    if not is_authorized(token, label):
-        raise ValidationException(
-            status_code=401, content={"message": "Unauthorized"}
-        )
-    return {}
+    vp = await request.json()
+    
+    for vc in vp['verifiableCredential']:
+        verified = agent.verify_credential(vc)
+    
+    return JSONResponse(status_code=200, content={})
 
 
 @router.post(
@@ -38,22 +37,23 @@ async def create_presentation_auth(
     summary="Create a presentation",
 )
 async def sign_presentation(label: str, request: Request):
-    token = request.headers.get("Authorization")
-    label = format_label(label)
-    await askar.verify_token(settings.ASKAR_KEY, label, token)
-    agent.verify_token(token)
+    label = is_authorized(label, request)
 
     request = await request.json()
-    # validations.presentations_sign(request)
 
     presentation = request["presentation"]
     options = request["options"]
 
-    did = (
+    holder_did = (
         presentation["holder"]
         if isinstance(presentation["holder"], str)
         else presentation["holder"]["id"]
     )
+    did = f"{settings.DID_WEB_BASE}:organization:{label}"
+    if did != holder_did:
+        raise ValidationException(
+            status_code=400, content={"message": "Invalid issuer"}
+        )
     options["verificationMethod"] = f"{did}#verkey"
 
     # Backwards compatibility with old json-ld routes in traction,
@@ -61,8 +61,8 @@ async def sign_presentation(label: str, request: Request):
     if "created" in options:
         options.pop("created")
     options["proofPurpose"] = "assertionMethod"
-    verkey = agent.get_verkey(did, token)
-    vp = agent.sign_json_ld(presentation, options, verkey, token)
+    verkey = agent.get_verkey(did)
+    vp = agent.sign_json_ld(presentation, options, verkey)
 
     return JSONResponse(status_code=201, content={"verifiablePresentation": vp})
 
@@ -74,16 +74,12 @@ async def sign_presentation(label: str, request: Request):
     summary="Verify a presentation",
 )
 async def verify_presentation(label: str, request: Request):
-    token = request.headers.get("Authorization")
-    label = format_label(label)
-    await askar.verify_token(settings.ASKAR_KEY, label, token)
-    agent.verify_token(token)
+    label = is_authorized(label, request)
 
     request = await request.json()
-    # validations.presentations_verify(request)
 
     vp = request["verifiablePresentation"]
-    verified = agent.verify_presentation(vp, token)
+    verified = agent.verify_presentation(vp)
 
     return JSONResponse(status_code=200, content=verified)
 
@@ -98,10 +94,6 @@ async def start_presentation(
     label: str,
     request: Request,
 ):
-    token = request.headers.get("Authorization")
-    label = format_label(label)
-    await askar.verify_token(settings.ASKAR_KEY, label, token)
-    agent.verify_token(token)
     return ""
 
 
@@ -115,8 +107,4 @@ async def end_presentation(
     label: str,
     request: Request,
 ):
-    token = request.headers.get("Authorization")
-    label = format_label(label)
-    await askar.verify_token(settings.ASKAR_KEY, label, token)
-    agent.verify_token(token)
     return ""

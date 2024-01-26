@@ -1,11 +1,15 @@
+from fastapi import HTTPException, Security
+from fastapi.security import APIKeyHeader
 import time
 from typing import Dict
 from config import settings
 import jwt, hashlib
-from fastapi import HTTPException, Security
-from fastapi.security import APIKeyHeader
+from app.utils import format_label
+from app.validations import ValidationException
 
 api_key_header = APIKeyHeader(name="X-API-Key")
+
+
 def get_api_key(api_key_header: str = Security(api_key_header)) -> str:
     if api_key_header == settings.TRACEABILITY_ADMIN_API_KEY:
         return api_key_header
@@ -13,6 +17,7 @@ def get_api_key(api_key_header: str = Security(api_key_header)) -> str:
         status_code=401,
         detail="Invalid or missing API Key",
     )
+
 
 def token_response(token: str, expires: int):
     return {"access_token": token, "expires": expires}
@@ -35,8 +40,10 @@ def decodeJWT(token: str) -> dict:
         return {}
 
 
-def is_authorized(token: str, label: str):
+def is_authorized(label, request):
+    label = format_label(label)
+    token = request.headers.get("Authorization").replace("Bearer ", "")
     decoded_token = decodeJWT(token)
-    if decoded_token['client_id'] != hashlib.md5(label.encode()).hexdigest():
-        return False
-    return True
+    if decoded_token["client_id"] != hashlib.md5(label.encode()).hexdigest():
+        raise ValidationException(status_code=401, content={"message": "Unauthorized"})
+    return label

@@ -1,6 +1,6 @@
 from fastapi import Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from app.models.validations import ValidationException
+from app.validations import ValidationException
 from .handler import decodeJWT
 
 
