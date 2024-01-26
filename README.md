@@ -50,6 +50,11 @@ cp .env.example .env
 
 ```
 
+There's a utility script available to generate secrets for convenience
+```bash
+./scripts/generate_secrets.sh
+```
+
 ### Build and deploy
 ```bash
 docker-compose up --build --detach
@@ -58,17 +63,10 @@ docker-compose up --build --detach
 ## Creating an identifier
 A super admin can register new identifiers.
 
-To create an identifier, choose a label and use the following curl request.
+To create an identifier, choose a label and run the provided script.
 ```bash
-source .env && curl -X 'POST' \
-  "https://$TRACEABILITY_DOMAIN_NAME/did" \
-  -H "accept: application/json" \
-  -H "Content-Type: application/json" \
-  -H "X-API-Key: $TRACEABILITY_ADMIN_API_KEY" \
-  -d '{"label": "changeme"}'
-
+./scripts/register_did.sh my_did
 ```
 
-You will be returned with a resolvable `did`, a `client_id` and a `client_secret`.
+You will be returned with a resolvable `did` and all the information you need to load the Postman environment. You can now control your did to issue, manage and verify credentials.
 
-You now have all the information to load the Postman environment and control your DID to issue, manage and store credentials.

@@ -18,7 +18,7 @@ services:
       VERIFIER_ENDPOINT: ${VERIFIER_ENDPOINT}
       VERIFIER_API_KEY: ${VERIFIER_API_KEY}
       POSTGRES_URI: postgres://${POSTGRES_USER}:${POSTGRES_PASS}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
-      ASKAR_KEY: ${ASKAR_KEY}
+      ASKAR_SEED: ${ASKAR_SEED}
     labels:
       - traefik.enable=true
       - traefik.http.routers.traceability-api.rule=Host(`${TRACEABILITY_DOMAIN_NAME}`)

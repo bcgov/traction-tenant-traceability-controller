@@ -57,6 +57,8 @@ async def register(
         "client_id": client_id,
         "client_secret": client_secret,
         "service_endpoint": f"{settings.HTTPS_BASE}/organization/{label}",
+        "token_endpoint": f"{settings.HTTPS_BASE}/oauth/token",
+        "token_audience": f"{settings.HTTPS_BASE}",
     }
 
 

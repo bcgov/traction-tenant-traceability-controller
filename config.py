@@ -1,6 +1,7 @@
 from pydantic_settings import BaseSettings
 import os
 from dotenv import load_dotenv
+from aries_askar.bindings import generate_raw_key
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 load_dotenv(os.path.join(basedir, ".env"))
@@ -24,7 +25,7 @@ class Settings(BaseSettings):
     STATUS_LIST_LENGHT: int = 131072
 
     POSTGRES_URI: str = os.environ["POSTGRES_URI"]
-    ASKAR_KEY: str = os.environ["ASKAR_KEY"]
+    ASKAR_KEY: str = generate_raw_key(os.environ["ASKAR_SEED"])
 
     VERIFIER_ENDPOINT: str = os.environ["VERIFIER_ENDPOINT"]
     VERIFIER_API_KEY: str = os.environ["VERIFIER_API_KEY"]
