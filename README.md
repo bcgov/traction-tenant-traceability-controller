@@ -34,6 +34,7 @@ Every web did will have a `StatusList2021` with revocation purpose for the crede
     - This will be the `did:web:` base
 - HTTPS traffic enabled to 443
 - A Traction `tenant_id` and `api_key`
+- If running the provided utility script, `curl` and `jq` are required.
 
 ### Prep the environment
 
