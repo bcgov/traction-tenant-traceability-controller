@@ -3,14 +3,14 @@ from config import settings
 from datetime import datetime
 from bitstring import BitArray
 from app.controllers import askar, agent
-import zlib, base64
+import gzip, base64
 
 
 def generate(status_list_bitstring):
     # https://www.w3.org/TR/vc-bitstring-status-list/#bitstring-generation-algorithm
     status_list_bitarray = BitArray(bin=status_list_bitstring)
-    status_list_compressed = zlib.compress(status_list_bitarray.bytes)
-    status_list_encoded = base64.standard_b64encode(status_list_compressed).decode(
+    status_list_compressed = gzip.compress(status_list_bitarray.bytes)
+    status_list_encoded = base64.urlsafe_b64encode(status_list_compressed).decode(
         "utf-8"
     )
     return status_list_encoded
@@ -18,8 +18,8 @@ def generate(status_list_bitstring):
 
 def expand(status_list_encoded):
     # https://www.w3.org/TR/vc-bitstring-status-list/#bitstring-expansion-algorithm
-    status_list_compressed = base64.standard_b64decode(status_list_encoded)
-    status_list_bytes = zlib.decompress(status_list_compressed)
+    status_list_compressed = base64.urlsafe_b64decode(status_list_encoded)
+    status_list_bytes = gzip.decompress(status_list_compressed)
     status_list_bitarray = BitArray(bytes=status_list_bytes)
     status_list_bitstring = status_list_bitarray.bin
     return status_list_bitstring
