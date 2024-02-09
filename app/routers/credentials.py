@@ -116,9 +116,14 @@ async def verify_credential(
     vc["@context"] = vc.pop("context")
     verification = CredentialVerificationResponse()
     verification = verification.dict()
+    verified = agent.verify_credential(vc)
+    verification['checks'].append('proof')
+    if 'errors' in verified:
+        verification['errors'] += verified['errors']
 
     # Check credential status
     if "credentialStatus" in vc:
+        verification['checks'].append('status')
         # vc['credentialStatus']['purpose']
         status_type = vc['credentialStatus']['type']
         verification["checks"] += ["status"]
@@ -129,26 +134,16 @@ async def verify_credential(
 
     # Check expiration date
     if "expirationDate" in vc:
-        verification["checks"].append("expiry")
+        verification["checks"].append("expiration")
         expiration_time = datetime.fromisoformat(vc["expirationDate"])
         timezone = expiration_time.tzinfo
         time_now = datetime.now(timezone)
         if expiration_time < time_now:
             verification["errors"].append("expired")
-    verified = agent.verify_credential(vc)
-    verification["checks"].append("proof")
-    try:
-        if not verified["verified"]:
-            verification["errors"].append("invalid proof")
-        if len(verification["errors"]) == 0 and len(verification["warnings"]) == 0:
-            verification["verified"] = True
-        else:
-            verification["verified"] = False
-        return JSONResponse(status_code=200, content=verification)
-    except:
-        verification["verified"] = False
-        verification["errors"].append("verifier error")
-        return JSONResponse(status_code=200, content=verification)
+
+    if len(verification["errors"]) == 0:
+        verification["verified"] = True
+    return JSONResponse(status_code=200, content=verification)
 
 
 @router.post(

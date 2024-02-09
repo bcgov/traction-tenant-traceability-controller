@@ -29,8 +29,11 @@ async def register(
     did_doc = DidDocument(id=did)
     did_doc.add_verkey(verkey)
     did_doc.add_service("TraceabilityAPI")
+    did_doc = did_doc.dict()
+    did_doc["@context"] = did_doc.pop("context")
+    
     data_key = f"{label}:did_document"
-    await askar.store_data(settings.ASKAR_KEY, data_key, dict(did_doc))
+    await askar.store_data(settings.ASKAR_KEY, data_key, did_doc)
 
     # Publish Status List VCs
     status_list_lenght = settings.STATUS_LIST_LENGHT

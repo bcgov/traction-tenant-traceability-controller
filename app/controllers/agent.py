@@ -55,8 +55,10 @@ def create_did(did_method, key_type, did=None):
 
 
 def resolve_did(did):
-    headers = {"Authorization": f"Bearer {request_token()}"}
-    endpoint = f"{settings.TRACTION_API_ENDPOINT}/resolver/resolve/{did}"
+    # headers = {"Authorization": f"Bearer {request_token()}"}
+    # endpoint = f"{settings.TRACTION_API_ENDPOINT}/resolver/resolve/{did}"
+    headers = {"X-API-KEY": settings.VERIFIER_API_KEY}
+    endpoint = f"{settings.VERIFIER_ENDPOINT}/resolver/resolve/{did}"
     r = requests.get(endpoint, headers=headers)
     try:
         return r.json()["did_document"]
