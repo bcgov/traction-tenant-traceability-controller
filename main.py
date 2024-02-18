@@ -9,6 +9,6 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 load_dotenv(os.path.join(basedir, ".env"))
 
 if __name__ == "__main__":
-    # Provision askar store
+    # Provision askar public store
     asyncio.run(askar.provision_store(settings.ASKAR_KEY))
     uvicorn.run("app.api:app", host="0.0.0.0", port=8000, workers=4)

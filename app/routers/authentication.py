@@ -1,10 +1,9 @@
 from fastapi import APIRouter, Form
 from typing import Annotated
 from config import settings
-from app.controllers import askar
+from app.controllers import auth
 import time
 import jwt
-import uuid
 
 router = APIRouter()
 
@@ -13,12 +12,7 @@ router = APIRouter()
 async def oauth(
     client_id: Annotated[str, Form()], client_secret: Annotated[str, Form()]
 ):
-    try:
-        client_hash = str(uuid.uuid5(uuid.UUID(client_secret), client_id))
-        if not await askar.verify_client_hash(settings.ASKAR_KEY, client_hash):
-            return "invalid id"
-    except ValueError:
-        return "invalid id"
+    auth.verify_client_hash(client_id, client_secret)
     expires_in = 600
     payload = {"client_id": client_id, "expires": int(time.time()) + expires_in}
     token = jwt.encode(payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)

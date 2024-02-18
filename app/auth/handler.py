@@ -4,8 +4,8 @@ import time
 from typing import Dict
 from config import settings
 import jwt, hashlib
-from app.utils import format_label
 from app.validations import ValidationException
+import uuid
 
 api_key_header = APIKeyHeader(name="X-API-Key")
 
@@ -41,9 +41,10 @@ def decodeJWT(token: str) -> dict:
 
 
 def is_authorized(label, request):
-    label = format_label(label)
     token = request.headers.get("Authorization").replace("Bearer ", "")
     decoded_token = decodeJWT(token)
-    if decoded_token["client_id"] != hashlib.md5(label.encode()).hexdigest():
+    label_hash = hashlib.md5(label.encode())
+    client_id = str(uuid.UUID(label_hash.hexdigest()))
+    if decoded_token["client_id"] != client_id:
         raise ValidationException(status_code=401, content={"message": "Unauthorized"})
     return label

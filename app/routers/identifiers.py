@@ -1,98 +1,65 @@
 from fastapi import APIRouter, Depends, Request, Security
 from app.models.web_requests import CreateDIDWebInput
-from app.models.did_document import DidDocument
-from app.validations import ValidationException, valid_did
-from app.controllers import askar, agent, status_list
+from app.validations import valid_did
+from app.controllers import auth, agent, status_list, did_web
 from config import settings
 from app.auth.bearer import JWTBearer
-from app.auth.handler import get_api_key, is_authorized
-from app.utils import format_label, did_from_label, new_client
+from app.auth.handler import get_api_key
+from app.utils import new_issuer_client
+import uuid
 
 router = APIRouter()
 
 
-@router.post("/register/did", tags=["Identifiers"], summary="Create Web DID")
-async def register(
-    request_body: CreateDIDWebInput,
-    request: Request,
-    api_key: str = Security(get_api_key),
+@router.post("/organizations", tags=["Identifiers"], summary="Create Web DID")
+async def register_org_did(
+    requestBody: CreateDIDWebInput,
+    apiKey: str = Security(get_api_key),
 ):
-    request_body = await request.json()
+    label = vars(requestBody)["label"]
 
-    # Create a did:web identifier and register with traction
-    label = format_label(request_body["label"])
-    did = did_from_label(label)
-    # TODO, change to web
-    verkey = agent.create_did("sov", "ed25519", did)
+    # Generate uuid if no label was provided
+    orgId = label if label else str(uuid.uuid4())
 
-    # Publish did document
-    did_doc = DidDocument(id=did)
-    did_doc.add_verkey(verkey)
-    did_doc.add_service("TraceabilityAPI")
-    did_doc = did_doc.dict()
-    did_doc["@context"] = did_doc.pop("context")
-    
-    data_key = f"{label}:did_document"
-    await askar.store_data(settings.ASKAR_KEY, data_key, did_doc)
+    # Register with traction
+    await did_web.register(orgId)
+    did = did_web.from_org_id(orgId)
 
-    # Publish Status List VCs
-    status_list_lenght = settings.STATUS_LIST_LENGHT
-    for list_type in ["StatusList2021", "RevocationList2020"]:
-        status_list_id = (
-            f"{settings.HTTPS_BASE}/organization/{label}/credentials/status/{list_type}"
-        )
-        status_list_vc = status_list.publish(
-            did, status_list_id, status_list_lenght, list_type
-        )
-        data_key = f"{label}:status_lists:{list_type}"
-        await askar.store_data(settings.ASKAR_KEY, data_key, status_list_vc)
-        data_key = f"{label}:status_entries:{list_type}"
-        await askar.store_data(
-            settings.ASKAR_KEY, data_key, [0, status_list_lenght - 1]
-        )
+    # Create Status List VCs
+    await status_list.create(orgId, "RevocationList2020")
+    await status_list.create(orgId, "StatusList2021", purpose='revocation')
 
     # Generate client credentials and store hash
-    client_id, client_secret, client_hash = new_client(label)
-    await askar.append_client_hash(settings.ASKAR_KEY, client_hash)
+    clientId, clientSecret = await new_issuer_client(orgId)
 
     return {
         "did": did,
-        "client_id": client_id,
-        "client_secret": client_secret,
-        "service_endpoint": f"{settings.HTTPS_BASE}/organization/{label}",
-        "token_endpoint": f"{settings.HTTPS_BASE}/oauth/token",
+        "client_id": clientId,
+        "client_secret": clientSecret,
         "token_audience": f"{settings.HTTPS_BASE}",
+        "token_endpoint": f"{settings.HTTPS_BASE}/oauth/token",
+        "service_endpoint": f"{settings.HTTPS_BASE}/organizations/{orgId}",
     }
 
 
 @router.get(
-    "/organization/{label}/did.json",
+    "/organizations/{orgId}/did.json",
     tags=["Identifiers"],
     summary="Get a DID's latest keys, services and capabilities",
 )
-async def get_did(label: str):
-    label = format_label(label)
-    try:
-        data_key = f"{label}:did_document"
-        did_doc = await askar.fetch_data(settings.ASKAR_KEY, data_key)
-        return did_doc
-    except:
-        raise ValidationException(
-            status_code=404,
-            content={"message": f"Did not found"},
-        )
+async def get_did(orgId: str):
+    return await did_web.get_did_document(orgId)
 
 
 @router.get(
-    "/organization/{label}/identifiers/{did}",
+    "/organizations/{orgId}/identifiers/{did}",
     tags=["Identifiers"],
     dependencies=[Depends(JWTBearer())],
     summary="Get a DID's latest keys, services and capabilities",
 )
-async def get_did(label: str, did: str, request: Request):
-    label = is_authorized(label, request)
-    did = did.replace("%3", ":").strip().lower()
+async def get_did(orgId: str, did: str, request: Request):
+    await auth.is_authorized(orgId, request)
     valid_did(did)
-    did_doc = agent.resolve_did(did)
+    didDocument = agent.resolve_did(did)
 
-    return {"didDocument": did_doc}
+    return {"didDocument": didDocument}
