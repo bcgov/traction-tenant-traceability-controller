@@ -5,7 +5,7 @@ import time
 from app.validations import ValidationException
 
         
-def holderClientHashesDataKey():
+def holderClientHashesDataKey(orgId):
     """ OAuth client who will send presentations `/presentations` """
     return f'holderClientHashes'
 
