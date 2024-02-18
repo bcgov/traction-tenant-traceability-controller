@@ -8,7 +8,7 @@ load_dotenv(os.path.join(basedir, ".env"))
 
 
 class Settings(BaseSettings):
-    PROJECT_TITLE: str = "aries-traceability-api"
+    PROJECT_TITLE: str = "aries-traceability-controller"
     PROJECT_VERSION: str = "v0"
 
     TRACEABILITY_DOMAIN_NAME: str = os.environ["TRACEABILITY_DOMAIN_NAME"]
@@ -19,19 +19,22 @@ class Settings(BaseSettings):
     TRACTION_TENANT_ID: str = os.environ["TRACTION_TENANT_ID"]
     TRACTION_API_KEY: str = os.environ["TRACTION_API_KEY"]
 
-    TRACEABILITY_ADMIN_API_KEY: str = os.environ["TRACEABILITY_ADMIN_API_KEY"]
-
+    # We use the traction api key as the controller admin api key
+    TRACEABILITY_ADMIN_API_KEY: str = os.environ["TRACTION_API_KEY"]
     # Minimum lenght of 16KB
-    STATUS_LIST_LENGHT: int = 131072
+    STATUS_LIST_LENGHT: int = 200000
 
     POSTGRES_URI: str = os.environ["POSTGRES_URI"]
-    ASKAR_KEY: str = generate_raw_key(os.environ["ASKAR_SEED"])
 
+    # We derive the public storage askar key from the traction api key
+    ASKAR_KEY: str = generate_raw_key(os.environ["TRACTION_API_KEY"])
+
+    # To be removed when new routes are added to traction
     VERIFIER_ENDPOINT: str = os.environ["VERIFIER_ENDPOINT"]
-    VERIFIER_API_KEY: str = os.environ["VERIFIER_API_KEY"]
+    VERIFIER_API_KEY: str = os.environ["TRACTION_API_KEY"]
 
     JWT_ALGORITHM: str = "HS256"
-    JWT_SECRET: str = os.environ["JWT_SECRET"]
+    JWT_SECRET: str = os.environ["TRACTION_API_KEY"]
 
 
 settings = Settings()

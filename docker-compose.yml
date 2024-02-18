@@ -10,15 +10,15 @@ services:
     entrypoint: ["python", "main.py"]
     environment:
       TRACEABILITY_DOMAIN_NAME: ${TRACEABILITY_DOMAIN_NAME}
-      TRACEABILITY_ADMIN_API_KEY: ${TRACEABILITY_ADMIN_API_KEY}
+      TRACEABILITY_ADMIN_API_KEY: ${TRACTION_API_KEY} #${TRACEABILITY_ADMIN_API_KEY}
       TRACTION_API_ENDPOINT: ${TRACTION_API_ENDPOINT}
       TRACTION_TENANT_ID: ${TRACTION_TENANT_ID}
       TRACTION_API_KEY: ${TRACTION_API_KEY}
-      JWT_SECRET: ${JWT_SECRET}
+      JWT_SECRET: ${TRACTION_API_KEY} #${JWT_SECRET}
       VERIFIER_ENDPOINT: ${VERIFIER_ENDPOINT}
-      VERIFIER_API_KEY: ${VERIFIER_API_KEY}
+      VERIFIER_API_KEY: ${TRACTION_API_KEY} #${VERIFIER_API_KEY}
       POSTGRES_URI: postgres://${POSTGRES_USER}:${POSTGRES_PASS}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
-      ASKAR_SEED: ${ASKAR_SEED}
+      ASKAR_SEED: ${TRACTION_API_KEY} #${ASKAR_SEED}
     labels:
       - traefik.enable=true
       - traefik.http.routers.traceability-api.rule=Host(`${TRACEABILITY_DOMAIN_NAME}`)
@@ -32,10 +32,12 @@ services:
       dockerfile: docker/Dockerfile
     container_name: verifier-agent
     restart: unless-stopped
+    ports:
+      - 8020:8020
     entrypoint: ["aca-py", "start"]
     command: [
       '--no-ledger',
-      '--admin-api-key', '${VERIFIER_API_KEY}',
+      '--admin-api-key', '${TRACTION_API_KEY}', #'${VERIFIER_API_KEY}',
       '--endpoint', 'http://verifier-agent:8021',
       '--admin', '0.0.0.0', '8020',
       '--outbound-transport', 'http',

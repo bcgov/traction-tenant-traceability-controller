@@ -3,54 +3,54 @@ from fastapi.responses import JSONResponse
 from typing import Annotated
 from config import settings
 from app.validations import ValidationException
-from app.controllers import askar, agent
+from app.controllers import askar, agent, auth
 from app.auth.bearer import JWTBearer
 from app.auth.handler import is_authorized
-from ..utils import format_label
 
 router = APIRouter()
 
 
 @router.post(
-    "/organization/{label}/presentations",
+    "/organizations/{orgId}/presentations",
     tags=["Presentations"],
     dependencies=[Depends(JWTBearer())],
     summary="Create a presentation. This endpoint allows clients holding a valid OAuth2 access token to create a presentation.",
 )
 async def create_presentation_auth(
-    label: str,
+    orgId: str,
     request: Request,
     Authorization: Annotated[str | None, Header()] = None,
 ):
+    await auth.is_authorized(orgId, request)
     vp = await request.json()
-    
-    for vc in vp['verifiableCredential']:
+
+    for vc in vp["verifiableCredential"]:
         verified = agent.verify_credential(vc)
-    
+
     return JSONResponse(status_code=200, content={})
 
 
 @router.post(
-    "/organization/{label}/presentations/prove",
+    "/organizations/{orgId}/presentations/prove",
     tags=["Presentations"],
     dependencies=[Depends(JWTBearer())],
     summary="Create a presentation",
 )
-async def sign_presentation(label: str, request: Request):
-    label = is_authorized(label, request)
+async def sign_presentation(orgId: str, request: Request):
+    await auth.is_authorized(orgId, request)
 
     request = await request.json()
 
     presentation = request["presentation"]
     options = request["options"]
 
-    holder_did = (
+    holderDid = (
         presentation["holder"]
         if isinstance(presentation["holder"], str)
         else presentation["holder"]["id"]
     )
-    did = f"{settings.DID_WEB_BASE}:organization:{label}"
-    if did != holder_did:
+    did = f"{settings.DID_WEB_BASE}:organization:{orgId}"
+    if did != holderDid:
         raise ValidationException(
             status_code=400, content={"message": "Invalid issuer"}
         )
@@ -68,13 +68,13 @@ async def sign_presentation(label: str, request: Request):
 
 
 @router.post(
-    "/organization/{label}/presentations/verify",
+    "/organizations/{orgId}/presentations/verify",
     tags=["Presentations"],
     dependencies=[Depends(JWTBearer())],
     summary="Verify a presentation",
 )
-async def verify_presentation(label: str, request: Request):
-    label = is_authorized(label, request)
+async def verify_presentation(orgId: str, request: Request):
+    await auth.is_authorized(orgId, request)
 
     request = await request.json()
 
@@ -85,26 +85,28 @@ async def verify_presentation(label: str, request: Request):
 
 
 @router.post(
-    "/organization/{label}/presentations/available",
+    "/organizations/{orgId}/presentations/available",
     tags=["Presentations"],
     dependencies=[Depends(JWTBearer())],
     summary="Start a presentation exchange flow",
 )
 async def start_presentation(
-    label: str,
+    orgId: str,
     request: Request,
 ):
+    await auth.is_authorized(orgId, request)
     return ""
 
 
 @router.post(
-    "/organization/{label}/presentations/submissions",
+    "/organizations/{orgId}/presentations/submissions",
     tags=["Presentations"],
     dependencies=[Depends(JWTBearer())],
     summary="End a presentation exchange flow",
 )
 async def end_presentation(
-    label: str,
+    orgId: str,
     request: Request,
 ):
+    await auth.is_authorized(orgId, request)
     return ""

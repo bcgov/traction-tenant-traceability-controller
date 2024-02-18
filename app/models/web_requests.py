@@ -6,19 +6,19 @@ from .credentials import (
 )
 from typing import List
 from pydantic import BaseModel, Field, field_validator
-import re
+import re, uuid
 
-CHECK_RE = re.compile("[a-zA-Z0-9_-]+$")
+CHECK_RE = re.compile("[a-z0-9_-]+$")
 
 
 class CreateDIDWebInput(BaseModel):
-    label: str = Field(example="")
+    label: str = Field(None, example="my_org")
 
     @field_validator("label")
     @classmethod
     def validate_issuer(cls, value):
         if not CHECK_RE.match(value):
-            raise ValueError("must match regex [a-zA-Z0-9_-]+$")
+            raise ValueError("provided label must match regex [a-z0-9_-]+$")
         return value
 
 

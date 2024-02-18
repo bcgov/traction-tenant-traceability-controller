@@ -66,6 +66,9 @@ def valid_did(did):
     if "did:" not in did:
         raise ValidationException(status_code=400, content={"message": "Invalid DID"})
 
+
 def valid_status_update_value(value):
-    if value not in ['0', '1']:
-        raise ValidationException(status_code=400, content={"message": "Invalid status value"})
+    if value not in ["0", "1"]:
+        raise ValidationException(
+            status_code=400, content={"message": "Invalid status value"}
+        )
