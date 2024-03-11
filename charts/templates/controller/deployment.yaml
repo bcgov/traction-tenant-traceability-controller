@@ -1,0 +1,29 @@
+---
+{{- with .Values.controller }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: {{ $.Values.namespace }}
+  name: {{ .name }}
+  labels:
+    app: {{ .name }}
+spec:
+  replicas: {{ .replicas }}
+  selector:
+    matchLabels:
+      app: {{ .name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .name }}
+    spec:
+      containers:
+        - name: {{ .name }}
+          image: {{ .image }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: {{ .port }}
+          envFrom:
+            - secretRef:
+                name: {{ .name }}
+{{- end }}

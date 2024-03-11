@@ -1,14 +1,16 @@
 ---
+{{- with .Values.controller }}
 apiVersion: v1
 kind: Service
 metadata:
   namespace: {{ $.Values.namespace }}
-  name: {{ $.Values.name }}
+  name: {{ .name }}
 spec:
   type: LoadBalancer
   selector:
-    app: {{ $.Values.name }}
+    app: {{ .name }}
   ports:
     - protocol: TCP
-      port: {{ $.Values.port }}
-      targetPort: {{ $.Values.port }}
+      port: {{ .port }}
+      targetPort: {{ .port }}
+{{- end }}

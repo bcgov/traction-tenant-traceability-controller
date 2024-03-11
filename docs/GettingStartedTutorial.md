@@ -6,10 +6,14 @@ This tutorial will guide you through setting up an instance of this controller w
     - [Pre-requisites](#pre-requisites)
     - [Environment](#environment)
     - [Build and deploy](#build-and-deploy)
+    - [Helm charts](#helm-charts)
+
+- [Configuration](#configuration)
     - [Creating a did](#create-did)
 
 ## Quickstart
 
+`cp .env.example .env`
 `docker-compose --env-file .env -f docker/docker-compose.yml -f docker/docker-compose.services.yml up --build`
 
 ## Deployment
@@ -48,7 +52,54 @@ There's a utility script available to generate secrets for convenience
 docker-compose up --build --detach
 ```
 
-## Creating a did
+### Helm charts
+Create the following variables and secrets in your github project
+Variables:
+- TRACTION_API_ENDPOINT
+- TRACEABILITY_CONTROLLER_IMAGE
+- TRACEABILITY_CONTROLLER_DOMAIN
+Secrets:
+- POSTGRES_URI
+- POSTGRES_USER
+- POSTGRES_PASSWORD
+- TRACTION_API_KEY
+- TRACTION_TENANT_ID
+
+#### Test the templates
+```bash
+source .env && \
+helm template traction-tenant-traceability-controller ./charts -f ./charts/values.yaml \
+            --namespace traction-tenant-traceability-controller --create-namespace \
+            --set controller.image=$TRACEABILITY_CONTROLLER_IMAGE \
+            --set controller.domain=$TRACEABILITY_CONTROLLER_DOMAIN \
+            --set controller.environment.TRACEABILITY_CONTROLLER_DOMAIN=$TRACEABILITY_CONTROLLER_DOMAIN \
+            --set controller.environment.POSTGRES_URI=$POSTGRES_URI \
+            --set controller.environment.TRACTION_API_KEY=$TRACTION_API_KEY \
+            --set controller.environment.TRACTION_TENANT_ID=$TRACTION_TENANT_ID \
+            --set controller.environment.TRACTION_API_ENDPOINT=$TRACTION_API_ENDPOINT \
+            --set postgres.environment.POSTGRES_USER=$POSTGRES_USER \
+            --set postgres.environment.POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+```
+
+#### Deploy
+```bash
+source .env && \
+helm upgrade --install --atomic --timeout 2m \
+            traction-tenant-traceability-controller ./charts -f ./charts/values.yaml \
+            --set controller.image=$TRACEABILITY_CONTROLLER_IMAGE \
+            --set controller.domain=$TRACEABILITY_CONTROLLER_DOMAIN \
+            --set controller.environment.TRACEABILITY_CONTROLLER_DOMAIN=$TRACEABILITY_CONTROLLER_DOMAIN \
+            --set controller.environment.POSTGRES_URI=$POSTGRES_URI \
+            --set controller.environment.TRACTION_API_KEY=$TRACTION_API_KEY \
+            --set controller.environment.TRACTION_TENANT_ID=$TRACTION_TENANT_ID \
+            --set controller.environment.TRACTION_API_ENDPOINT=$TRACTION_API_ENDPOINT \
+            --set postgres.environment.POSTGRES_USER=$POSTGRES_USER \
+            --set postgres.environment.POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+```
+
+
+## Deployment
+### Creating a did
 A super admin can register new identifiers.
 
 To create an identifier, choose a label and run the provided script.
