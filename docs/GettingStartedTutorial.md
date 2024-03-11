@@ -4,7 +4,7 @@ This tutorial will guide you through setting up an instance of this controller w
 
 - [Traction setup](#traction-setup)
     - [Create account](#create-account)
-
+    - [Create API key](#create-api-key)
 - [Deployment](#deployment)
     - [Docker](#docker)
         - [Pre-requisites](#pre-requisites)
@@ -12,7 +12,6 @@ This tutorial will guide you through setting up an instance of this controller w
         - [Build and deploy](#build-and-deploy)
     - [Kubernetes](#kubernetes)
         - [Helm charts](#helm-charts)
-
 - [Configuration](#configuration)
     - [Creating a did](#create-did)
 
