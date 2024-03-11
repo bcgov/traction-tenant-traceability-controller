@@ -33,6 +33,8 @@ services:
     image: traefik:v2.10
     container_name: traefik
     restart: always
+    networks:
+      - traceability
     security_opt:
       - no-new-privileges:true
     command:

@@ -11,9 +11,15 @@ app = FastAPI(title=settings.PROJECT_TITLE, version=settings.PROJECT_VERSION)
 api_router = APIRouter()
 
 api_router.include_router(authentication.router)
-api_router.include_router(identifiers.router)
-api_router.include_router(credentials.router)
-api_router.include_router(presentations.router)
+api_router.include_router(identifiers.router, prefix=f"/{settings.DID_NAMESPACE}")
+api_router.include_router(credentials.router, prefix=f"/{settings.DID_NAMESPACE}")
+api_router.include_router(presentations.router, prefix=f"/{settings.DID_NAMESPACE}")
+
+
+@api_router.get("/healthz", tags=["Health"], summary="Health check")
+async def health_check():
+    return JSONResponse(status_code=200, content={})
+
 
 app.include_router(api_router)
 

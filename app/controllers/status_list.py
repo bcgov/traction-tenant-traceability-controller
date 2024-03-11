@@ -11,9 +11,7 @@ def generate(statusListBitstring):
     # https://www.w3.org/TR/vc-bitstring-status-list/#bitstring-generation-algorithm
     statusListBitarray = BitArray(bin=statusListBitstring)
     statusListCompressed = gzip.compress(statusListBitarray.bytes)
-    statusList_encoded = base64.urlsafe_b64encode(statusListCompressed).decode(
-        "utf-8"
-    )
+    statusList_encoded = base64.urlsafe_b64encode(statusListCompressed).decode("utf-8")
     return statusList_encoded
 
 
@@ -26,8 +24,8 @@ def expand(statusListEncoded):
     return statusListBitstring
 
 
-async def create(orgId, statusType, purpose="revocation"):
-    did = did_web.from_org_id(orgId)
+async def create(did_label, statusType, purpose="revocation"):
+    did = did_web.from_org_id(did_label)
     # https://www.w3.org/TR/vc-bitstring-status-list/#example-example-bitstringstatuslistcredential
     credential = {
         "@context": [
@@ -37,7 +35,7 @@ async def create(orgId, statusType, purpose="revocation"):
         "issuanceDate": str(datetime.now().isoformat()),
         "type": ["VerifiableCredential"],
         "credentialSubject": {
-            "type": statusType, 
+            "type": statusType,
             "encodedList": generate(str(0) * settings.STATUS_LIST_LENGHT),
         },
     }
@@ -58,21 +56,21 @@ async def create(orgId, statusType, purpose="revocation"):
     verkey = agent.get_verkey(did)
     statusCredential = agent.sign_json_ld(credential, options, verkey)
     statusCredentialId = statusType
-    
-    dataKey = askar.statusCredentialDataKey(orgId, statusCredentialId)
-    await askar.store_data(settings.ASKAR_KEY, dataKey, statusCredential)
-    
-    dataKey = askar.statusEntriesDataKey(orgId, statusCredentialId)
+
+    dataKey = askar.statusCredentialDataKey(did_label, statusCredentialId)
+    await askar.store_data(settings.ASKAR_PUBLIC_STORE_KEY, dataKey, statusCredential)
+
+    dataKey = askar.statusEntriesDataKey(did_label, statusCredentialId)
     await askar.store_data(
-        settings.ASKAR_KEY, dataKey, [0, settings.STATUS_LIST_LENGHT - 1]
+        settings.ASKAR_PUBLIC_STORE_KEY, dataKey, [0, settings.STATUS_LIST_LENGHT - 1]
     )
 
 
-async def create_entry(orgId, statusListCredentialId, purpose="revocation"):
+async def create_entry(did_label, statusListCredentialId, purpose="revocation"):
     # https://www.w3.org/TR/vc-bitstring-status-list/#example-example-statuslistcredential
 
-    dataKey = askar.statusEntriesDataKey(orgId, statusListCredentialId)
-    statusListEntries = await askar.fetch_data(settings.ASKAR_KEY, dataKey)
+    dataKey = askar.statusEntriesDataKey(did_label, statusListCredentialId)
+    statusListEntries = await askar.fetch_data(settings.ASKAR_PUBLIC_STORE_KEY, dataKey)
     # Find an unoccupied index
     statusListIndex = random.choice(
         [
@@ -82,12 +80,10 @@ async def create_entry(orgId, statusListCredentialId, purpose="revocation"):
         ]
     )
     statusListEntries.append(statusListIndex)
-    await askar.update_data(settings.ASKAR_KEY, dataKey, statusListEntries)
+    await askar.update_data(settings.ASKAR_PUBLIC_STORE_KEY, dataKey, statusListEntries)
 
     listType = statusListCredentialId
-    statusListCredentialId = (
-        f"{settings.HTTPS_BASE}/organizations/{orgId}/credentials/status/{statusListCredentialId}"
-    )
+    statusListCredentialId = f"{settings.HTTPS_BASE}/{settings.DID_NAMESPACE}/{did_label}/credentials/status/{statusListCredentialId}"
     credentialStatus = {"id": f"{statusListCredentialId}#{statusListIndex}"}
 
     if listType == "RevocationList2020":
@@ -103,17 +99,14 @@ async def create_entry(orgId, statusListCredentialId, purpose="revocation"):
 
     return credentialStatus
 
-async def add_credential_status(orgId, credential, status):
+
+async def add_credential_status(did_label, credential, status):
     if status["type"] == "StatusList2021Entry":
         credential["@context"].append("https://w3id.org/vc/status-list/2021/v1")
-        credential["credentialStatus"] = await create_entry(
-            orgId, "StatusList2021"
-        )
+        credential["credentialStatus"] = await create_entry(did_label, "StatusList2021")
     elif status["type"] == "RevocationList2020Status":
         credential["@context"].append("https://w3id.org/vc-revocation-list-2020/v1")
-        credential["credentialStatus"] = await create_entry(
-            orgId, "RevocationList2020"
-        )
+        credential["credentialStatus"] = await create_entry(did_label, "RevocationList2020")
     return credential
 
 
@@ -121,29 +114,29 @@ def get_credential_status(vc, statusType):
     # https://www.w3.org/TR/vc-bitstring-status-list/#validate-algorithm
     if statusType == "RevocationList2020Status":
         statusListIndex = vc["credentialStatus"]["revocationListIndex"]
-        statusListCredentialUri = vc["credentialStatus"][
-            "revocationListCredential"
-        ]
+        statusListCredentialUri = vc["credentialStatus"]["revocationListCredential"]
     elif statusType == "StatusList2021Entry":
         statusListIndex = vc["credentialStatus"]["statusListIndex"]
         statusListCredentialUri = vc["credentialStatus"]["statusListCredential"]
 
     r = requests.get(statusListCredentialUri)
     statusListCredential = r.json()
-    statusListBitstring = expand(statusListCredential["credentialSubject"]["encodedList"])
+    statusListBitstring = expand(
+        statusListCredential["credentialSubject"]["encodedList"]
+    )
     statusList = list(statusListBitstring)
     credentialStatusBit = statusList[statusListIndex]
     return True if credentialStatusBit == "1" else False
 
 
-async def change_credential_status(vc, statusBit, orgId, statusListCredentialId):
+async def change_credential_status(vc, statusBit, did_label, statusListCredentialId):
     if statusListCredentialId == "RevocationList2020":
         statusList_index = vc["credentialStatus"]["revocationListIndex"]
     elif statusListCredentialId == "StatusList2021":
         statusList_index = vc["credentialStatus"]["statusListIndex"]
 
-    dataKey = askar.statusCredentialDataKey(orgId, statusListCredentialId)
-    statusListCredential = await askar.fetch_data(settings.ASKAR_KEY, dataKey)
+    dataKey = askar.statusCredentialDataKey(did_label, statusListCredentialId)
+    statusListCredential = await askar.fetch_data(settings.ASKAR_PUBLIC_STORE_KEY, dataKey)
     statusListEncoded = statusListCredential["credentialSubject"]["encodedList"]
     statusListBitstring = expand(statusListEncoded)
     statusList = list(statusListBitstring)
@@ -166,10 +159,11 @@ async def change_credential_status(vc, statusBit, orgId, statusListCredentialId)
 
     return statusListCredential
 
-async def get_status_list_credential(orgId, statusListCredentialId):
+
+async def get_status_list_credential(did_label, statusListCredentialId):
     try:
-        dataKey = askar.statusCredentialDataKey(orgId, statusListCredentialId)
-        statusListCredential = await askar.fetch_data(settings.ASKAR_KEY, dataKey)
+        dataKey = askar.statusCredentialDataKey(did_label, statusListCredentialId)
+        statusListCredential = await askar.fetch_data(settings.ASKAR_PUBLIC_STORE_KEY, dataKey)
     except:
         return ValidationException(
             status_code=404,

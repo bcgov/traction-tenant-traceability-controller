@@ -5,5 +5,10 @@ import asyncio
 
 if __name__ == "__main__":
     # Provision askar public store
-    asyncio.run(askar.provision_store(settings.ASKAR_PUBLIC_STORE, settings.ASKAR_PUBLIC_STORE_KEY))
-    uvicorn.run("app.api:app", host="0.0.0.0", port=int(settings.PORT), workers=int(settings.WORKERS))
+    asyncio.run(askar.provision_public_store())
+    uvicorn.run(
+        "app.api:app",
+        host="0.0.0.0",
+        port=int(settings.PORT),
+        workers=int(settings.WORKERS),
+    )

@@ -3,10 +3,10 @@ version: '3'
 services:
 
   agent:
-    # image: ghcr.io/hyperledger/aries-cloudagent-python:py3.9-0.10.4
-    build:
-      context: ../../aries-cloudagent-python
-      dockerfile: docker/Dockerfile
+    image: bcgovimages/aries-cloudagent:py3.9-indy-1.16.0_0.12.0rc2
+    # build:
+    #   context: ../../aries-cloudagent-python
+    #   dockerfile: docker/Dockerfile
     container_name: agent
     restart: unless-stopped
     networks:

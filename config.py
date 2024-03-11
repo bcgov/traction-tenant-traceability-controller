@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     TRACEABILITY_CONTROLLER_DOMAIN: str = os.environ["TRACEABILITY_CONTROLLER_DOMAIN"]
     HTTPS_BASE: str = f"https://{TRACEABILITY_CONTROLLER_DOMAIN}"
     DID_WEB_BASE: str = f"did:web:{TRACEABILITY_CONTROLLER_DOMAIN}"
+    DID_NAMESPACE: str = "organizations"
 
     TRACTION_API_KEY: str = os.environ["TRACTION_API_KEY"]
     TRACTION_TENANT_ID: str = os.environ["TRACTION_TENANT_ID"]
@@ -30,7 +31,7 @@ class Settings(BaseSettings):
     POSTGRES_URI: str = os.environ["POSTGRES_URI"]
 
     # We derive the public storage askar key from the traction api key
-    ASKAR_PUBLIC_STORE: str = 'traceability'
+    ASKAR_PUBLIC_STORE: str = f"{POSTGRES_URI}/traceability"
     ASKAR_PUBLIC_STORE_KEY: str = generate_raw_key(TRACTION_API_KEY)
 
     # To be removed when new routes are added to traction
@@ -39,5 +40,6 @@ class Settings(BaseSettings):
 
     JWT_ALGORITHM: str = "HS256"
     JWT_SECRET: str = TRACTION_API_KEY
+
 
 settings = Settings()

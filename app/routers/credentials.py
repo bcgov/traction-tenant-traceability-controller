@@ -17,34 +17,34 @@ router = APIRouter()
 
 
 @router.get(
-    "/organizations/{orgId}/credentials/{credentialId}",
+    "/{did_label}/credentials/{credentialId}",
     tags=["Credentials"],
     dependencies=[Depends(JWTBearer())],
     summary="Get a verifiable credential by id. Required to make revocable credentials.",
 )
-async def get_credential(orgId: str, credentialId: str, request: Request):
-    await auth.is_authorized(orgId, request)
-    return await askar.get_credential(orgId, credentialId)
+async def get_credential(did_label: str, credentialId: str, request: Request):
+    await auth.is_authorized(did_label, request)
+    return await askar.get_credential(did_label, credentialId)
 
 
 @router.post(
-    "/organizations/{orgId}/credentials/issue",
+    "/{did_label}/credentials/issue",
     tags=["Credentials"],
     dependencies=[Depends(JWTBearer())],
     summary="Issue a credential",
 )
 async def issue_credential(
-    orgId: str, request: Request, requestBody: IssueCredentialSchema
+    did_label: str, request: Request, requestBody: IssueCredentialSchema
 ):
-    await auth.is_authorized(orgId, request)
+    await auth.is_authorized(did_label, request)
 
     requestBody = requestBody.model_dump(by_alias=True, exclude_none=True)
     credential = requestBody["credential"]
     options = requestBody["options"]
 
     # Ensure the issuer field in the credential has the right value
-    did_web.can_issue(credential, orgId)
-    did = did_web.from_org_id(orgId)
+    did_web.can_issue(credential, did_label)
+    did = did_web.from_org_id(did_label)
 
     # Generate a credential id if none is provided
     if "id" not in credential:
@@ -52,8 +52,8 @@ async def issue_credential(
     # Fill status information
     if "credentialStatus" in options:
         status = options.pop("credentialStatus")
-        credential = await status_list.add_credential_status(orgId, credential, status)
-        
+        credential = await status_list.add_credential_status(did_label, credential, status)
+
     # Default to #verkey as id
     options["verificationMethod"] = f"{did}#verkey"
 
@@ -69,22 +69,22 @@ async def issue_credential(
     # vc = agent.issue_credential(credential, options)
 
     credentialId = credential["id"]
-    dataKey = askar.issuedCredentialDataKey(orgId, credentialId)
+    dataKey = askar.issuedCredentialDataKey(did_label, credentialId)
     await askar.store_data(settings.ASKAR_KEY, dataKey, vc)
 
     return JSONResponse(status_code=201, content={"verifiableCredential": vc})
 
 
 @router.post(
-    "/organizations/{orgId}/credentials/verify",
+    "/{did_label}/credentials/verify",
     tags=["Credentials"],
     dependencies=[Depends(JWTBearer())],
     summary="Verify a credential",
 )
 async def verify_credential(
-    orgId: str, request: Request, requestBody: VerifyCredentialSchema
+    did_label: str, request: Request, requestBody: VerifyCredentialSchema
 ):
-    await auth.is_authorized(orgId, request)
+    await auth.is_authorized(did_label, request)
 
     requestBody = requestBody.dict(exclude_none=True)
     vc = requestBody["verifiableCredential"]
@@ -122,15 +122,15 @@ async def verify_credential(
 
 
 @router.post(
-    "/organizations/{orgId}/credentials/status",
+    "/{did_label}/credentials/status",
     tags=["Credentials"],
     dependencies=[Depends(JWTBearer())],
     summary="Updates the status of an issued credential.",
 )
 async def update_credential_status(
-    orgId: str, request: Request, requestBody: UpdateCredentialStatusSchema
+    did_label: str, request: Request, requestBody: UpdateCredentialStatusSchema
 ):
-    await auth.is_authorized(orgId, request)
+    await auth.is_authorized(did_label, request)
     requestBody = requestBody.dict(exclude_none=True)
     credentialId = requestBody["credentialId"]
     credentialStatus = requestBody["credentialStatus"]
@@ -147,7 +147,7 @@ async def update_credential_status(
         )
 
     # We fetch the issued credential based on the credential ID
-    dataKey = askar.issuedCredentialDataKey(orgId, credentialId)
+    dataKey = askar.issuedCredentialDataKey(did_label, credentialId)
     vc = await askar.fetch_data(settings.ASKAR_KEY, dataKey)
 
     # Make sure the payload refers to the correct status list type
@@ -159,25 +159,25 @@ async def update_credential_status(
     if statusType == "RevocationList2020Status":
         statusCredentialId = statusListType = "RevocationList2020"
         statusCredential = await status_list.change_credential_status(
-            vc, statusBit, orgId, statusListType
+            vc, statusBit, did_label, statusListType
         )
     elif statusType == "StatusList2021Entry":
         statusCredentialId = statusListType = "StatusList2021"
         statusCredential = await status_list.change_credential_status(
-            vc, statusBit, orgId, statusListType
+            vc, statusBit, did_label, statusListType
         )
 
     # Store the new credential
-    dataKey = askar.statusCredentialDataKey(orgId, statusCredentialId)
+    dataKey = askar.statusCredentialDataKey(did_label, statusCredentialId)
     await askar.update_data(settings.ASKAR_KEY, dataKey, statusCredential)
 
     return JSONResponse(status_code=200, content={"message": "Status updated"})
 
 
 @router.get(
-    "/organizations/{orgId}/credentials/status/{statusCredentialId}",
+    "/{did_label}/credentials/status/{statusCredentialId}",
     tags=["Credentials"],
     summary="Returns a status list credential",
 )
-async def get_status_list_credential(orgId: str, statusCredentialId: str):
-    return await status_list.get_status_list_credential(orgId, statusCredentialId)
+async def get_status_list_credential(did_label: str, statusCredentialId: str):
+    return await status_list.get_status_list_credential(did_label, statusCredentialId)

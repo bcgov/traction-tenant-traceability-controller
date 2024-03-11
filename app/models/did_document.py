@@ -46,6 +46,6 @@ class DidDocument(BaseModel):
             service = Service(
                 id=f"{self.id}#traceability-api",
                 type=["TraceabilityAPI"],
-                serviceEndpoint=f"{settings.HTTPS_BASE}/organizations/{self.id.split(':')[-1]}",
+                serviceEndpoint=f"{settings.HTTPS_BASE}/{settings.DID_NAMESPACE}/{self.id.split(':')[-1]}",
             )
             self.service.append(service)

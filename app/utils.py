@@ -12,7 +12,7 @@ def generate_client_hash(client_secret, client_id):
 
 
 def did_from_label(label):
-    return f"{settings.DID_WEB_BASE}:organizations:{label}"
+    return f"{settings.DID_WEB_BASE}:{settings.DID_NAMESPACE}:{label}"
 
 
 def generate_askar_key(seed):
@@ -25,8 +25,8 @@ async def new_client(label):
     client_secret = secrets.token_urlsafe(24)
     client_hash = str(uuid.uuid5(client_id, client_secret))
 
-    await askar.append_client_hash(settings.ASKAR_KEY, client_hash)
-    askar_key = generate_askar_key(client_secret)
+    await askar.append_client_hash(settings.ASKAR_PUBLIC_STORE_KEY, client_hash)
+    # askar_key = generate_askar_key(client_secret)
 
     # Provision private store
     # await askar.provision_store(askar_key)
@@ -34,13 +34,12 @@ async def new_client(label):
     return client_id, client_secret
 
 
-async def new_issuer_client(orgId):
-    orgIdHash = hashlib.md5(orgId.encode())
-    clientId = uuid.UUID(orgIdHash.hexdigest())
+async def new_issuer_client(did_label):
+    clientId = uuid.uuid3()
     clientSecret = secrets.token_urlsafe(24)
     clientHash = str(uuid.uuid5(clientId, clientSecret))
-
-    await askar.append_client_hash(settings.ASKAR_KEY, clientHash)
+    dataKey = f'clientHash:{did_label}'
+    await askar.store_data(settings.ASKAR_PUBLIC_STORE_KEY, dataKey, clientHash)
 
     # Provision private store
     # askarKey = generate_askar_key(clientSecret)

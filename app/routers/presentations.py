@@ -11,17 +11,17 @@ router = APIRouter()
 
 
 @router.post(
-    "/organizations/{orgId}/presentations",
+    "/{did_label}/presentations",
     tags=["Presentations"],
     dependencies=[Depends(JWTBearer())],
     summary="Create a presentation. This endpoint allows clients holding a valid OAuth2 access token to create a presentation.",
 )
 async def create_presentation_auth(
-    orgId: str,
+    did_label: str,
     request: Request,
     Authorization: Annotated[str | None, Header()] = None,
 ):
-    await auth.is_authorized(orgId, request)
+    await auth.is_authorized(did_label, request)
     vp = await request.json()
 
     for vc in vp["verifiableCredential"]:
@@ -31,13 +31,13 @@ async def create_presentation_auth(
 
 
 @router.post(
-    "/organizations/{orgId}/presentations/prove",
+    "/{did_label}/presentations/prove",
     tags=["Presentations"],
     dependencies=[Depends(JWTBearer())],
     summary="Create a presentation",
 )
-async def sign_presentation(orgId: str, request: Request):
-    await auth.is_authorized(orgId, request)
+async def sign_presentation(did_label: str, request: Request):
+    await auth.is_authorized(did_label, request)
 
     request = await request.json()
 
@@ -49,7 +49,7 @@ async def sign_presentation(orgId: str, request: Request):
         if isinstance(presentation["holder"], str)
         else presentation["holder"]["id"]
     )
-    did = f"{settings.DID_WEB_BASE}:organization:{orgId}"
+    did = f"{settings.DID_WEB_BASE}:organization:{did_label}"
     if did != holderDid:
         raise ValidationException(
             status_code=400, content={"message": "Invalid issuer"}
@@ -68,13 +68,13 @@ async def sign_presentation(orgId: str, request: Request):
 
 
 @router.post(
-    "/organizations/{orgId}/presentations/verify",
+    "/{did_label}/presentations/verify",
     tags=["Presentations"],
     dependencies=[Depends(JWTBearer())],
     summary="Verify a presentation",
 )
-async def verify_presentation(orgId: str, request: Request):
-    await auth.is_authorized(orgId, request)
+async def verify_presentation(did_label: str, request: Request):
+    await auth.is_authorized(did_label, request)
 
     request = await request.json()
 
@@ -85,28 +85,28 @@ async def verify_presentation(orgId: str, request: Request):
 
 
 @router.post(
-    "/organizations/{orgId}/presentations/available",
+    "/{did_label}/presentations/available",
     tags=["Presentations"],
     dependencies=[Depends(JWTBearer())],
     summary="Start a presentation exchange flow",
 )
 async def start_presentation(
-    orgId: str,
+    did_label: str,
     request: Request,
 ):
-    await auth.is_authorized(orgId, request)
+    await auth.is_authorized(did_label, request)
     return ""
 
 
 @router.post(
-    "/organizations/{orgId}/presentations/submissions",
+    "/{did_label}/presentations/submissions",
     tags=["Presentations"],
     dependencies=[Depends(JWTBearer())],
     summary="End a presentation exchange flow",
 )
 async def end_presentation(
-    orgId: str,
+    did_label: str,
     request: Request,
 ):
-    await auth.is_authorized(orgId, request)
+    await auth.is_authorized(did_label, request)
     return ""

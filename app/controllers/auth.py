@@ -9,7 +9,7 @@ from app.auth.handler import decodeJWT
 async def verify_client_hash(clientId, clientSecret):
     try:
         clientHash = str(uuid.uuid5(uuid.UUID(clientId), clientSecret))
-        if not await askar.verify_client_hash(settings.ASKAR_KEY, clientHash):
+        if not await askar.verify_client_hash(settings.ASKAR_PUBLIC_STORE_KEY, clientHash):
             raise ValidationException(
                 status_code=400,
                 content={"message": "Invalid client"},
@@ -21,10 +21,10 @@ async def verify_client_hash(clientId, clientSecret):
         )
 
 
-async def is_authorized(orgId, request):
+async def is_authorized(did_label, request):
     token = request.headers.get("Authorization").replace("Bearer ", "")
     decodedToken = decodeJWT(token)
-    labelHash = hashlib.md5(orgId.encode())
+    labelHash = hashlib.md5(did_label.encode())
     clientId = str(uuid.UUID(labelHash.hexdigest()))
     if decodedToken["client_id"] != clientId:
         raise ValidationException(status_code=401, content={"message": "Unauthorized"})
