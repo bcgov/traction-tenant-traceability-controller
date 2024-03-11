@@ -17,14 +17,14 @@ router = APIRouter()
 
 
 @router.get(
-    "/{did_label}/credentials/{credentialId}",
+    "/{did_label}/credentials/{credential_id}",
     tags=["Credentials"],
     dependencies=[Depends(JWTBearer())],
     summary="Get a verifiable credential by id. Required to make revocable credentials.",
 )
-async def get_credential(did_label: str, credentialId: str, request: Request):
+async def get_credential(did_label: str, credential_id: str, request: Request):
     await auth.is_authorized(did_label, request)
-    return await askar.get_credential(did_label, credentialId)
+    return await askar.get_credential(did_label, credential_id)
 
 
 @router.post(
@@ -34,13 +34,13 @@ async def get_credential(did_label: str, credentialId: str, request: Request):
     summary="Issue a credential",
 )
 async def issue_credential(
-    did_label: str, request: Request, requestBody: IssueCredentialSchema
+    did_label: str, request: Request, request_body: IssueCredentialSchema
 ):
     await auth.is_authorized(did_label, request)
 
-    requestBody = requestBody.model_dump(by_alias=True, exclude_none=True)
-    credential = requestBody["credential"]
-    options = requestBody["options"]
+    request_body = request_body.model_dump(by_alias=True, exclude_none=True)
+    credential = request_body["credential"]
+    options = request_body["options"]
 
     # Ensure the issuer field in the credential has the right value
     did_web.can_issue(credential, did_label)
@@ -68,9 +68,9 @@ async def issue_credential(
     # New vc-api routes
     # vc = agent.issue_credential(credential, options)
 
-    credentialId = credential["id"]
-    dataKey = askar.issuedCredentialDataKey(did_label, credentialId)
-    await askar.store_data(settings.ASKAR_KEY, dataKey, vc)
+    credential_id = credential["id"]
+    data_key = askar.issuedCredentialDataKey(did_label, credential_id)
+    await askar.store_data(settings.ASKAR_PUBLIC_STORE_KEY, data_key, vc)
 
     return JSONResponse(status_code=201, content={"verifiableCredential": vc})
 
@@ -82,12 +82,12 @@ async def issue_credential(
     summary="Verify a credential",
 )
 async def verify_credential(
-    did_label: str, request: Request, requestBody: VerifyCredentialSchema
+    did_label: str, request: Request, request_body: VerifyCredentialSchema
 ):
     await auth.is_authorized(did_label, request)
 
-    requestBody = requestBody.dict(exclude_none=True)
-    vc = requestBody["verifiableCredential"]
+    request_body = request_body.dict(exclude_none=True)
+    vc = request_body["verifiableCredential"]
     vc["@context"] = vc.pop("context")
     verification = CredentialVerificationResponse()
     verification = verification.dict()
@@ -110,10 +110,10 @@ async def verify_credential(
     # Check expiration date
     if "expirationDate" in vc:
         verification["checks"].append("expiration")
-        expirationDate = datetime.fromisoformat(vc["expirationDate"])
-        timezone = expirationDate.tzinfo
+        expiration_date = datetime.fromisoformat(vc["expirationDate"])
+        timezone = expiration_date.tzinfo
         time_now = datetime.now(timezone)
-        if expirationDate < time_now:
+        if expiration_date < time_now:
             verification["errors"].append("expired")
 
     if len(verification["errors"]) == 0:
@@ -128,56 +128,56 @@ async def verify_credential(
     summary="Updates the status of an issued credential.",
 )
 async def update_credential_status(
-    did_label: str, request: Request, requestBody: UpdateCredentialStatusSchema
+    did_label: str, request: Request, request_body: UpdateCredentialStatusSchema
 ):
     await auth.is_authorized(did_label, request)
-    requestBody = requestBody.dict(exclude_none=True)
-    credentialId = requestBody["credentialId"]
-    credentialStatus = requestBody["credentialStatus"]
+    request_body = request_body.dict(exclude_none=True)
+    credential_id = request_body["credentialId"]
+    credential_status = request_body["credentialStatus"]
 
     # We find which status bit to update
-    statusBit = credentialStatus[0]["status"]
-    statusType = credentialStatus[0]["type"]
+    status_bit = credential_status[0]["status"]
+    status_type = credential_status[0]["type"]
     if (
-        credentialStatus[0]["type"] in ["StatusList2021Entry"]
-        and "statusPurpose" not in credentialStatus[0]
+        credential_status[0]["type"] in ["StatusList2021Entry"]
+        and "statusPurpose" not in credential_status[0]
     ):
         raise ValidationException(
             status_code=400, content={"message": "Missing purpose"}
         )
 
     # We fetch the issued credential based on the credential ID
-    dataKey = askar.issuedCredentialDataKey(did_label, credentialId)
-    vc = await askar.fetch_data(settings.ASKAR_KEY, dataKey)
+    data_key = askar.issuedCredentialDataKey(did_label, credential_id)
+    vc = await askar.fetch_data(settings.ASKAR_PUBLIC_STORE_KEY, data_key)
 
     # Make sure the payload refers to the correct status list type
-    if vc["credentialStatus"]["type"] != statusType:
+    if vc["credentialStatus"]["type"] != status_type:
         return ValidationException(
             status_code=400,
             content={"message": f"Status list type mismatch"},
         )
-    if statusType == "RevocationList2020Status":
-        statusCredentialId = statusListType = "RevocationList2020"
-        statusCredential = await status_list.change_credential_status(
-            vc, statusBit, did_label, statusListType
+    if status_type == "RevocationList2020Status":
+        status_credential_id = status_list_type = "RevocationList2020"
+        status_credential = await status_list.change_credential_status(
+            vc, status_bit, did_label, status_list_type
         )
-    elif statusType == "StatusList2021Entry":
-        statusCredentialId = statusListType = "StatusList2021"
-        statusCredential = await status_list.change_credential_status(
-            vc, statusBit, did_label, statusListType
+    elif status_type == "StatusList2021Entry":
+        status_credential_id = status_list_type = "StatusList2021"
+        status_credential = await status_list.change_credential_status(
+            vc, status_bit, did_label, status_list_type
         )
 
     # Store the new credential
-    dataKey = askar.statusCredentialDataKey(did_label, statusCredentialId)
-    await askar.update_data(settings.ASKAR_KEY, dataKey, statusCredential)
+    data_key = askar.statusCredentialDataKey(did_label, status_credential_id)
+    await askar.update_data(settings.ASKAR_PUBLIC_STORE_KEY, data_key, status_credential)
 
     return JSONResponse(status_code=200, content={"message": "Status updated"})
 
 
 @router.get(
-    "/{did_label}/credentials/status/{statusCredentialId}",
+    "/{did_label}/credentials/status/{status_credential_id}",
     tags=["Credentials"],
     summary="Returns a status list credential",
 )
-async def get_status_list_credential(did_label: str, statusCredentialId: str):
-    return await status_list.get_status_list_credential(did_label, statusCredentialId)
+async def get_status_list_credential(did_label: str, status_credential_id: str):
+    return await status_list.get_status_list_credential(did_label, status_credential_id)

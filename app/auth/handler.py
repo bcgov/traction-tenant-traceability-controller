@@ -40,11 +40,11 @@ def decodeJWT(token: str) -> dict:
         return {}
 
 
-def is_authorized(orgId, request):
+def is_authorized(did_label, request):
     token = request.headers.get("Authorization").replace("Bearer ", "")
     decoded_token = decodeJWT(token)
-    label_hash = hashlib.md5(orgId.encode())
+    label_hash = hashlib.md5(did_label.encode())
     client_id = str(uuid.UUID(label_hash.hexdigest()))
     if decoded_token["client_id"] != client_id:
         raise ValidationException(status_code=401, content={"message": "Unauthorized"})
-    return orgId
+    return did_label

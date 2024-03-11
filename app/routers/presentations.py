@@ -44,13 +44,13 @@ async def sign_presentation(did_label: str, request: Request):
     presentation = request["presentation"]
     options = request["options"]
 
-    holderDid = (
+    holder_did = (
         presentation["holder"]
         if isinstance(presentation["holder"], str)
         else presentation["holder"]["id"]
     )
     did = f"{settings.DID_WEB_BASE}:organization:{did_label}"
-    if did != holderDid:
+    if did != holder_did:
         raise ValidationException(
             status_code=400, content={"message": "Invalid issuer"}
         )

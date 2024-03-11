@@ -17,10 +17,10 @@ class Credential(BaseModel):
     type: List[str] = Field()
     issuer: Union[Dict[str, str], str] = Field()
     context: List[str] = Field(alias="@context")
-    issuanceDate: str = Field()
-    expirationDate: str = Field(None)
-    credentialStatus: dict = Field(None)
-    credentialSubject: dict = Field()
+    issuance_date: str = Field(alias="issuanceDate")
+    expiration_date: str = Field(None, alias="expirationDate")
+    credential_status: dict = Field(None, alias="credentialStatus")
+    credential_subject: dict = Field(alias="credentialSubject")
 
     @field_validator("context")
     @classmethod
@@ -42,19 +42,19 @@ class Credential(BaseModel):
         valid_issuer(value)
         return value
 
-    @field_validator("issuanceDate")
+    @field_validator("issuance_date")
     @classmethod
     def validate_issuance_date(cls, value):
         valid_xml_timestamp(value)
         return value
 
-    @field_validator("expirationDate")
+    @field_validator("expiration_date")
     @classmethod
     def validate_expiration_date(cls, value):
         valid_xml_timestamp(value)
         return value
 
-    @field_validator("credentialSubject")
+    @field_validator("credential_subject")
     @classmethod
     def validate_credential_subject(cls, value):
         valid_credential_subject(value)
@@ -84,19 +84,19 @@ class VerifiableCredential(Credential):
         valid_issuer(value)
         return value
 
-    @field_validator("issuanceDate")
+    @field_validator("issuance_date")
     @classmethod
     def validate_issuance_date(cls, value):
         valid_xml_timestamp(value)
         return value
 
-    @field_validator("expirationDate")
+    @field_validator("expiration_date")
     @classmethod
     def validate_expiration_date(cls, value):
         valid_xml_timestamp(value)
         return value
 
-    @field_validator("credentialSubject")
+    @field_validator("credential_subject")
     @classmethod
     def validate_credential_subject(cls, value):
         valid_credential_subject(value)
@@ -118,7 +118,7 @@ class IssuanceOptions(BaseModel):
     created: str = Field(None)
     domain: str = Field(None)
     challenge: str = Field(None)
-    credentialStatus: CredentialStatusOption = Field(None)
+    credential_status: CredentialStatusOption = Field(None, alias="credentialStatus")
 
     @field_validator("type")
     @classmethod
@@ -136,7 +136,7 @@ class IssuanceOptions(BaseModel):
 class CredentialStatusUpdateItem(BaseModel):
     type: str = Field()
     status: str = Field()
-    statusPurpose: str = Field(None)
+    status_purpose: str = Field(None, alias="statusPurpose")
 
     @field_validator("type")
     @classmethod
