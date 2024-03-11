@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  namespace: {{ $.Values.namespace }}
+  name: {{ $.Values.name }}
+type: Opaque
+stringData:
+{{- with .Values.environment }}
+  POSTGRES_URI: {{ .POSTGRES_URI }}
+  TRACTION_API_KEY: {{ .TRACTION_API_KEY }}
+  TRACTION_TENANT_ID: {{ .TRACTION_TENANT_ID }}
+  TRACTION_API_ENDPOINT: {{ .TRACTION_API_ENDPOINT }}
+  TRACEABILITY_CONTROLLER_DOMAIN: {{ .TRACEABILITY_CONTROLLER_DOMAIN }}
+{{- end }}

@@ -1,0 +1,57 @@
+---
+version: '3'
+services:
+
+  traceability-api:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    container_name: traceability-api
+    restart: unless-stopped
+    networks:
+      - traceability
+    ports:
+      - 8000:8000
+    entrypoint: ["python", "main.py"]
+    environment:
+      PORT: 8000
+      WORKERS: 4
+      POSTGRES_URI: ${POSTGRES_URI}
+      TRACTION_API_KEY: ${TRACTION_API_KEY}
+      TRACTION_TENANT_ID: ${TRACTION_TENANT_ID}
+      TRACTION_API_ENDPOINT: ${TRACTION_API_ENDPOINT}
+      VERIFIER_ENDPOINT: ${VERIFIER_ENDPOINT}
+      TRACEABILITY_CONTROLLER_DOMAIN: ${TRACEABILITY_CONTROLLER_DOMAIN}
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.traceability-api.rule=Host(`${TRACEABILITY_CONTROLLER_DOMAIN}`)
+      - traefik.http.routers.traceability-api.entrypoints=websecure
+      - traefik.http.routers.traceability-api.tls.certresolver=myresolver
+      - traefik.http.services.traceability-api.loadbalancer.server.port=8000
+
+  traefik:
+    image: traefik:v2.10
+    container_name: traefik
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.myresolver.acme.tlschallenge=true
+      - --certificatesresolvers.myresolver.acme.email=${LETSENCRYPT_EMAIL}
+      - --certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json
+    ports:
+      - 443:443
+    volumes:
+      - letsencrypt:/letsencrypt
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+volumes:
+  letsencrypt:
+
+networks:
+  traceability:
+    name: traceability
+    external: true

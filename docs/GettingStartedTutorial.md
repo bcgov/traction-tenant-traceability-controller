@@ -8,6 +8,10 @@ This tutorial will guide you through setting up an instance of this controller w
     - [Build and deploy](#build-and-deploy)
     - [Creating a did](#create-did)
 
+## Quickstart
+
+`docker-compose --env-file .env -f docker/docker-compose.yml -f docker/docker-compose.services.yml up --build`
+
 ## Deployment
 
 ### Pre-requisites

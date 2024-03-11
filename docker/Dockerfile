@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-WORKDIR /aries-traceability
+WORKDIR /traceability-controller
 
 ENV VIRTUAL_ENV=/opt/venv
 RUN python3 -m venv $VIRTUAL_ENV

@@ -33,8 +33,8 @@ def recievedCredentialDataKey(orgId, credentialId):
     """ Credentials recieved through a presentation exchange """
     return f'storedCredentials:{orgId}:{credentialId}'
 
-async def provision_store(key):
-    await Store.provision(settings.POSTGRES_URI, "raw", key, recreate=False)
+async def provision_store(db, key):
+    await Store.provision(f'{settings.POSTGRES_URI}/{db}', "raw", key, recreate=False)
 
 
 async def open_store(key):

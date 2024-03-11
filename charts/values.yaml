@@ -1,0 +1,15 @@
+---
+namespace: traction-tenant-traceability-controller
+name: traction-tenant-traceability-controller
+image:
+port: 8000
+replicas: 1
+domain: '${{ variables.TRACEABILITY_CONTROLLER_DOMAIN }}'
+environment:
+  PORT: 8000
+  WORKERS: 4
+  TRACEABILITY_CONTROLLER_DOMAIN: '${{ variables.TRACEABILITY_CONTROLLER_DOMAIN }}'
+  POSTGRES_URI: '${{ secrets.POSTGRES_URI }}'
+  TRACTION_API_KEY: '${{ secrets.TRACTION_API_KEY }}'
+  TRACTION_TENANT_ID: '${{ secrets.TRACTION_TENANT_ID }}'
+  TRACTION_API_ENDPOINT: '${{ variables.TRACTION_API_ENDPOINT }}'
