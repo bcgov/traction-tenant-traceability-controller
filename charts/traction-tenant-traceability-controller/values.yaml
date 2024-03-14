@@ -6,7 +6,7 @@ ingressSuffix: ""
 controller:
   fullname: traction-tenant-traceability-controller
   image:
-    repository: ghcr.io/hyperledger/traction-tenant-traceability-controller
+    repository: ghcr.io/bcgov/traction-tenant-traceability-controller
     pullPolicy: IfNotPresent
     pullSecrets: []
     tag: ""
