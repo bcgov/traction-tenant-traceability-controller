@@ -76,7 +76,7 @@ controller:
     TRACEABILITY_CONTROLLER_DOMAIN: ''
 
     # internal service endpoint for the acapy verifier agent admin api
-    VERIFIER_ENDPOINT: 'http://acapy:8020'
+    VERIFIER_ENDPOINT: 'http://aries-cloudagent-python:8020'
 
 acapy:
   fullname: aries-cloudagent-python
