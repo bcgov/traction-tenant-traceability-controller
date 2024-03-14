@@ -70,9 +70,9 @@ controller:
     TRACTION_API_ENDPOINT: ''
 
     # domain for the traceability controller endpoint 
-    # ex: my.tttc.domain.example.com
+    # ex: vc.interop.vonx.io
     # this value will be used as the did:web: base 
-    # ex: did:web:my.tttc.domain.example.com:organizations:xyz
+    # ex: did:web:vc.interop.vonx.io:identifiers:xyz
     TRACEABILITY_CONTROLLER_DOMAIN: ''
 
     # internal service endpoint for the acapy verifier agent admin api
