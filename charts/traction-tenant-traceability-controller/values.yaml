@@ -52,7 +52,7 @@ controller:
 
   environment:
     # internal service uri for the postgres DB 
-    # ex: postgres://admin:p@ssword@postgres-svc:5432
+    # ex: postgres://admin:p4ssword@postgres-svc:5432
     POSTGRES_URI: ''
 
     # the did namespace did:web:{domain}:{did_namespace}:{identifier}
