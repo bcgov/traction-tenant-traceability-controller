@@ -1,7 +1,0 @@
-apiVersion: v2
-name: traction-tenant-traceability-controller
-description: An api server to provide interoperability between the traction platform and the w3c-ccg traceability specification.
-type: application
-version: 0.0.1
-
-appVersion: "v0.0.1"

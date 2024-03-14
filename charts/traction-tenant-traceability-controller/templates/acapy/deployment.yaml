@@ -1,0 +1,62 @@
+---
+{{- with .Values.acapy }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .fullname }}
+  labels:
+    app: {{ .fullname }}
+spec:
+  replicas: {{ .replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .fullname }}
+  template:
+    metadata:
+      labels:
+        app: {{ .fullname }}
+    spec:
+      imagePullSecrets:
+        {{- toYaml .image.pullSecrets | nindent 8 }}
+      securityContext:
+        {{- toYaml .podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .fullname }}
+          securityContext:
+            {{- toYaml .containerSecurityContext | nindent 12 }}
+          image: "{{ .image.repository }}:{{ .image.tag }}"
+          imagePullPolicy: {{ .image.pullPolicy }}
+          command: [
+            'aca-py', 'start', 
+            '--no-ledger',
+            '--admin', '0.0.0.0', '{{ .service.adminPort }}',
+            '--admin-insecure-mode',
+            '--endpoint', 'http://agent:{{ .service.httpPort }}',
+            '--outbound-transport', 'http',
+            '--inbound-transport', 'http', '0.0.0.0', '{{ .service.httpPort }}'
+          ]
+          ports:
+            - name: admin
+              containerPort: {{ .service.adminPort }}
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /status/ready
+              port: {{ .service.adminPort }}
+            initialDelaySeconds: 60
+            periodSeconds: 10    
+          livenessProbe:
+            httpGet:
+              path: /status/live
+              port: {{ .service.adminPort }}
+            initialDelaySeconds: 90
+            periodSeconds: 10
+          resources:
+            {{- toYaml .resources | nindent 12 }}
+      nodeSelector:
+        {{- toYaml .nodeSelector | nindent 8 }}
+      affinity:
+        {{- toYaml .affinity | nindent 8 }}
+      tolerations:
+        {{- toYaml .tolerations | nindent 8 }}
+{{- end }}

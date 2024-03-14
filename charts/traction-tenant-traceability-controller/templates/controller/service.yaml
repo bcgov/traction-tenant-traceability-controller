@@ -1,0 +1,16 @@
+---
+{{- with .Values.controller }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .fullname }}
+spec:
+  type: {{ .service.type }}
+  selector:
+    app: {{ .fullname }}
+  ports:
+    - port: {{ .service.apiPort }}
+      targetPort: {{ .service.apiPort }}
+      protocol: TCP
+      name: api
+{{- end }}

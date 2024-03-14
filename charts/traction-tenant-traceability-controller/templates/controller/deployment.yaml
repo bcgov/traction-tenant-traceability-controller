@@ -1,0 +1,55 @@
+---
+{{- with .Values.controller }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .fullname }}
+  labels:
+    app: {{ .fullname }}
+spec:
+  replicas: {{ .replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .fullname }}
+  template:
+    metadata:
+      labels:
+        app: {{ .fullname }}
+    spec:
+      imagePullSecrets:
+        {{- toYaml .image.pullSecrets | nindent 8 }}
+      securityContext:
+        {{- toYaml .podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .fullname }}
+          securityContext:
+            {{- toYaml .containerSecurityContext | nindent 12 }}
+          image: "{{ .image.repository }}:{{ .image.tag }}"
+          imagePullPolicy: {{ .image.pullPolicy }}
+          env:
+            - name: WORKERS
+              value: 4
+          envFrom:
+            - secretRef:
+                name: {{ .fullname }}-environment
+          ports:
+            - name: api
+              containerPort: {{ .service.apiPort }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /server/live
+              port: {{ .service.apiPort }}
+          readinessProbe:
+            httpGet:
+              path: /server/ready
+              port: {{ .service.apiPort }}
+          resources:
+            {{- toYaml .resources | nindent 12 }}
+      nodeSelector:
+        {{- toYaml .nodeSelector | nindent 8 }}
+      affinity:
+        {{- toYaml .affinity | nindent 8 }}
+      tolerations:
+        {{- toYaml .tolerations | nindent 8 }}
+{{- end }}

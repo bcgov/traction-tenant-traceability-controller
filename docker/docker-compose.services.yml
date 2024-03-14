@@ -4,9 +4,6 @@ services:
 
   agent:
     image: bcgovimages/aries-cloudagent:py3.9-indy-1.16.0_0.12.0rc2
-    # build:
-    #   context: ../../aries-cloudagent-python
-    #   dockerfile: docker/Dockerfile
     container_name: agent
     restart: unless-stopped
     networks:

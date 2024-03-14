@@ -1,0 +1,175 @@
+---
+nameOverride: ""
+fullnameOverride: ""
+ingressSuffix: ""
+
+controller:
+  fullname: traction-tenant-traceability-controller
+  image:
+    repository: ghcr.io/hyperledger/traction-tenant-traceability-controller
+    pullPolicy: IfNotPresent
+    pullSecrets: []
+    tag: ""
+
+  ingress:
+    tls: []
+    host: ""
+    enabled: true
+    className: "nginx"
+    annotations: []
+
+  resources:
+    limits:
+      cpu: 100m
+      memory: 512Mi
+    requests:
+      cpu: 10m
+      memory: 128Mi
+
+  autoscaling:
+    enabled: false
+
+  networkPolicy:
+    enabled: false
+    ingress:
+      enabled: true
+      namespaceSelector: []
+      podSelector: {}
+
+  replicaCount: 1
+
+  podAnnotations: {}
+
+  podSecurityContext: {}
+  containerSecurityContext: {}
+  service:
+    type: ClusterIP
+    apiPort: 8000
+
+  affinity: {}
+  nodeSelector: {}
+  tolerations: []
+
+  environment:
+    # internal service uri for the postgres DB 
+    # ex: postgres://admin:p@ssword@postgres-svc:5432
+    POSTGRES_URI: ''
+
+    # the did namespace did:web:{domain}:{did_namespace}:{identifier}
+    # ex: organizations, instances, identifiers, clients, tenants
+    DID_NAMESPACE: 'organizations'
+
+    # Created api key from a traction tenant account
+    TRACTION_API_KEY: ''
+
+    # Created tenant_id from a traction tenant account
+    TRACTION_TENANT_ID: ''
+
+    # url for the traction api endpoint 
+    # ex: https://some.traction.api.example.com
+    TRACTION_API_ENDPOINT: ''
+
+    # domain for the traceability controller endpoint 
+    # ex: my.tttc.domain.example.com
+    # this value will be used as the did:web: base 
+    # ex: did:web:my.tttc.domain.example.com:organizations:xyz
+    TRACEABILITY_CONTROLLER_DOMAIN: ''
+
+    # internal service endpoint for the acapy verifier agent admin api
+    VERIFIER_ENDPOINT: 'http://acapy:8020'
+
+acapy:
+  fullname: aries-cloudagent-python
+  image:
+    repository: ghcr.io/hyperledger/aries-cloudagent-python
+    pullPolicy: IfNotPresent
+    pullSecrets: []
+    tag: py3.9-0.12.0rc2
+
+  autoscaling:
+    enabled: false
+
+  serviceAccount:
+    create: false
+
+  replicaCount: 1
+
+  labelOverride: ""
+  enabled: true
+
+  resources:
+    limits:
+      cpu: "1"
+      memory: 1000Mi
+    requests:
+      cpu: 250m
+      memory: 384Mi
+
+  podAnnotations: {}
+  podSecurityContext: {}
+  containerSecurityContext: {}
+
+  service:
+    type: ClusterIP
+    adminPort: 8020
+    httpPort: 8021
+
+  affinity: {}
+  nodeSelector: {}
+  tolerations: []
+
+  networkPolicy:
+    enabled: false
+    ingress:
+      enabled: false
+      namespaceSelector: {}
+      podSelector: {}
+
+postgres:
+  fullname: postgres
+  image:
+    repository: postgres
+    pullPolicy: IfNotPresent
+    pullSecrets: []
+    tag: 13-alpine
+
+  autoscaling:
+    enabled: false
+
+  serviceAccount:
+    create: false
+
+  replicaCount: 1
+
+  labelOverride: ""
+
+  resources:
+    limits:
+      cpu: 600m
+      memory: 2600Mi
+    requests:
+      cpu: 300m
+      memory: 1300Mi
+
+  podAnnotations: {}
+  podSecurityContext: {}
+  containerSecurityContext: {}
+
+  service:
+    type: ClusterIP
+    dbPort: 5432
+
+  affinity: {}
+  nodeSelector: {}
+  tolerations: []
+
+  networkPolicy:
+    enabled: false
+    ingress:
+      enabled: false
+      namespaceSelector: {}
+      podSelector: {}
+
+  environment:
+    POSTGRES_USER: ""
+    POSTGRES_PASSWORD: ""

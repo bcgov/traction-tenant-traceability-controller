@@ -86,35 +86,35 @@ async def verify_credential(
 ):
     await auth.is_authorized(did_label, request)
 
-    request_body = request_body.dict(exclude_none=True)
+    request_body = request_body.model_dump(by_alias=True, exclude_none=True)
     vc = request_body["verifiableCredential"]
-    vc["@context"] = vc.pop("context")
     verification = CredentialVerificationResponse()
     verification = verification.dict()
+    verification["verified"] = False
+    
     verified = agent.verify_credential(vc)
-    verification["checks"].append("proof")
     if "errors" in verified:
-        verification["errors"] += verified["errors"]
+        verification["errors"].append(verified["errors"])
+    verification["checks"].append("proof")
 
     # Check credential status
     if "credentialStatus" in vc:
-        verification["checks"].append("status")
         # vc['credentialStatus']['purpose']
-        statusType = vc["credentialStatus"]["type"]
-        verification["checks"] += ["status"]
-        status = status_list.get_credential_status(vc, statusType)
+        status_type = vc["credentialStatus"]["type"]
+        status = status_list.get_credential_status(vc, status_type)
         if status:
-            verification["errors"] += ["revoked"]
+            verification["errors"].append("revoked")
             verification["verifications"] = [{"title": "Revocation", "status": "bad"}]
+        verification["checks"].append("status")
 
     # Check expiration date
     if "expirationDate" in vc:
-        verification["checks"].append("expiration")
         expiration_date = datetime.fromisoformat(vc["expirationDate"])
         timezone = expiration_date.tzinfo
         time_now = datetime.now(timezone)
         if expiration_date < time_now:
             verification["errors"].append("expired")
+        verification["checks"].append("expiration")
 
     if len(verification["errors"]) == 0:
         verification["verified"] = True
@@ -131,7 +131,7 @@ async def update_credential_status(
     did_label: str, request: Request, request_body: UpdateCredentialStatusSchema
 ):
     await auth.is_authorized(did_label, request)
-    request_body = request_body.dict(exclude_none=True)
+    request_body = request_body.model_dump(by_alias=True, exclude_none=True)
     credential_id = request_body["credentialId"]
     credential_status = request_body["credentialStatus"]
 

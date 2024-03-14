@@ -11,7 +11,6 @@ class Settings(BaseSettings):
     PROJECT_TITLE: str = "traction-tenant-traceability-controller"
     PROJECT_VERSION: str = "v0"
 
-    PORT: str = os.environ["PORT"]
     WORKERS: str = os.environ["WORKERS"]
 
     TRACEABILITY_CONTROLLER_DOMAIN: str = os.environ["TRACEABILITY_CONTROLLER_DOMAIN"]
