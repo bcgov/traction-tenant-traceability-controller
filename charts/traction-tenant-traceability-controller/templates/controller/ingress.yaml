@@ -1,0 +1,21 @@
+{{- with .Values.controller }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .fullname }}
+  annotations:
+    {{- toYaml .ingress.annotations | nindent 4 }}
+spec:
+  rules:
+  - host: {{ .openshift.route.host | quote }}
+    http:
+      paths:
+      - backend:
+          service:
+            name: {{ .fullname }}
+            port:
+              number: {{ .service.apiPort }}
+        path: /
+        pathType: ImplementationSpecific
+{{- end }}

@@ -5,18 +5,18 @@ kind: Route
 metadata:
   name: {{ .fullname }}
   annotations:
-    haproxy.router.openshift.io/timeout: {{ .openshift.route.timeout }}
+    {{- toYaml .openshift.route.annotations | nindent 4 }}
   labels:
     {{- toYaml .labels | nindent 4 }}
 spec:
-  host: {{ .host | quote }}
+  host: {{ .openshift.route.host | quote }}
   path: {{ .openshift.route.path }}
   to:
     kind: Service
     name: {{ .fullName }}
     weight: 100
   port:
-    targetPort: {{ .openshift.route.targetPort }}
+    targetPort: {{ .service.apiPort }}
   wildcardPolicy: {{ .openshift.route.wildcardPolicy }}
   tls:
     {{- toYaml .openshift.route.tls | nindent 4}}

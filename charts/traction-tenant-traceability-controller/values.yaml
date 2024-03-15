@@ -5,16 +5,8 @@ ingressSuffix: ""
 
 selectorLabels: {}
 
-ingress:
-  enabled: true
-  className: ""
-  annotations:
-    route.openshift.io/termination: edge
-  tls: []
-
 controller:
   fullname: controller
-  host: "traceability.interop.vonx.io"
   image:
     repository: ghcr.io/bcgov/traction-tenant-traceability-controller
     pullPolicy: IfNotPresent
@@ -50,17 +42,26 @@ controller:
     type: ClusterIP
     apiPort: 8000
 
+  ingress:
+    enabled: true
+    annotations:
+      kubernetes.io/ingress.class: ""
+      route.openshift.io/termination: edge
+    tls: []
+
   openshift:
     route:
       enabled: true
       path: "/"
-      targetPort: 8000
-      timeout: 2m
+      host: "traceability.interop.vonx.io"
       tls:
         enabled: false
         insecureEdgeTerminationPolicy: None
         termination: edge
       wildcardPolicy: None
+      annotations:
+        haproxy.router.openshift.io/timeout: 2m
+        cert-manager.io/issuer-name: my-issuer
 
   resources:
     limits:
