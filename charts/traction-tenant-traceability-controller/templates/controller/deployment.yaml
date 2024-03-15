@@ -5,16 +5,16 @@ kind: Deployment
 metadata:
   name: {{ .fullname }}
   labels:
-    app: {{ .fullname }}
+    {{- toYaml .labels | nindent 4 }}
 spec:
   replicas: {{ .replicaCount }}
   selector:
     matchLabels:
-      app: {{ .fullname }}
+      {{- toYaml .labels | nindent 4 }}
   template:
     metadata:
       labels:
-        app: {{ .fullname }}
+        {{- toYaml .labels | nindent 4 }}
     spec:
       imagePullSecrets:
         {{- toYaml .image.pullSecrets | nindent 8 }}

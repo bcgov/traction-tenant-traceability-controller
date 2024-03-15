@@ -2,12 +2,12 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ .Values.fullnameOverride }}
+  name: {{ .Values.fullname }}
   annotations:
     kubernetes.io/ingress.class: {{ .Values.ingress.className }}
 spec:
   rules:
-  - host: {{ .Values.controller.ingress.host }}
+  - host: {{ .Values.controller.host }}
     http:
       paths:
       - backend:

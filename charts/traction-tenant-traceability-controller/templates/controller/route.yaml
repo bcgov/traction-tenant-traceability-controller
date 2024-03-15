@@ -1,5 +1,4 @@
-{{- if .Values.controller.openshift.route.enabled -}}
-{{- with .Values.controller }}
+{{- with .Values.controller }}{{- if .openshift.route.enabled -}}
 ---
 apiVersion: route.openshift.io/v1
 kind: Route
@@ -8,7 +7,7 @@ metadata:
   annotations:
     haproxy.router.openshift.io/timeout: {{ .openshift.route.timeout }}
   labels:
-    {{- include "controller.labels" . | nindent 4 }}
+    {{- toYaml .labels | nindent 4 }}
 spec:
   host: {{ .host | quote }}
   path: {{ .openshift.route.path }}
@@ -19,6 +18,6 @@ spec:
   port:
     targetPort: {{ .openshift.route.targetPort }}
   wildcardPolicy: {{ .openshift.route.wildcardPolicy }}
-{{ include "controller.openshift.route.tls" . | indent 2}}
-{{- end }}
-{{- end }}
+  tls:
+    {{- toYaml .openshift.route.tls | nindent 4}}
+{{- end }}{{- end }}

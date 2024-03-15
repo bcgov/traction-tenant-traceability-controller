@@ -1,7 +1,9 @@
 ---
 nameOverride: ""
-fullnameOverride: "traction-tenant-traceability-controller"
+fullname: "traction-tenant-traceability-controller"
 ingressSuffix: ""
+
+selectorLabels: {}
 
 ingress:
   enabled: true
@@ -11,13 +13,18 @@ ingress:
   tls: []
 
 controller:
-  fullName: controller
+  fullname: controller
   host: "traceability.interop.vonx.io"
   image:
     repository: ghcr.io/bcgov/traction-tenant-traceability-controller
     pullPolicy: IfNotPresent
     pullSecrets: []
-    tag: ""
+    tag: "interop"
+
+  labels:
+    app: controller
+
+  selectorLabels: {}
 
   serviceAccount:
     create: false
@@ -47,7 +54,7 @@ controller:
     route:
       enabled: true
       path: "/"
-      targetPort: http
+      targetPort: 8000
       timeout: 2m
       tls:
         enabled: false
@@ -91,6 +98,11 @@ acapy:
     pullPolicy: IfNotPresent
     pullSecrets: []
     tag: py3.9-0.12.0rc2
+
+  labels:
+    - app: acapy
+
+  selectorLabels: {}
 
   serviceAccount:
     create: false

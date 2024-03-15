@@ -5,7 +5,7 @@ kind: Deployment
 metadata:
   name: {{ .fullname }}
   labels:
-    app: {{ .fullname }}
+    {{- toYaml .labels | nindent 4 }}
 spec:
   replicas: {{ .replicaCount }}
   selector:

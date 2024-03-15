@@ -41,6 +41,7 @@ helm template traction-tenant-traceability-controller ./traction-tenant-traceabi
     --set controller.environment.TRACTION_API_KEY=$TRACTION_API_KEY \
     --set controller.environment.TRACTION_TENANT_ID=$TRACTION_TENANT_ID \
     --set controller.environment.TRACTION_API_ENDPOINT=$TRACTION_API_ENDPOINT \
-    --set controller.environment.TRACEABILITY_CONTROLLER_DOMAIN=$TRACEABILITY_CONTROLLER_DOMAIN
+    --set controller.environment.TRACEABILITY_CONTROLLER_DOMAIN=$TRACEABILITY_CONTROLLER_DOMAIN \
+    --set controller.environment.VERIFIER_ENDPOINT=$VERIFIER_ENDPOINT
 
 ```
