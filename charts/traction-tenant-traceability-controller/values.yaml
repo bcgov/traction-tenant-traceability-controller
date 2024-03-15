@@ -4,7 +4,7 @@ fullnameOverride: "traction-tenant-traceability-controller"
 ingressSuffix: ""
 
 ingress:
-  enabled: false
+  enabled: true
   className: ""
   annotations:
     route.openshift.io/termination: edge
@@ -12,7 +12,7 @@ ingress:
 
 controller:
   fullName: controller
-  host: 
+  host: "traceability.interop.vonx.io"
   image:
     repository: ghcr.io/bcgov/traction-tenant-traceability-controller
     pullPolicy: IfNotPresent
@@ -45,7 +45,7 @@ controller:
 
   openshift:
     route:
-      enabled: false
+      enabled: true
       path: "/"
       targetPort: http
       timeout: 2m
@@ -64,9 +64,9 @@ controller:
       memory: 128Mi
 
   networkPolicy:
-    enabled: false
+    enabled: true
     ingress:
-      enabled: false
+      enabled: true
       namespaceSelector:
         network.openshift.io/policy-group: ingress
       podSelector: {}
@@ -119,7 +119,7 @@ acapy:
 
   openshift:
     route:
-      enabled: false
+      enabled: true
       path: "/"
       targetPort: http
       timeout: 2m
@@ -138,9 +138,9 @@ acapy:
       memory: 384Mi
 
   networkPolicy:
-    enabled: false
+    enabled: true
     ingress:
-      enabled: false
+      enabled: true
       namespaceSelector:
         network.openshift.io/policy-group: ingress
       podSelector: {}
