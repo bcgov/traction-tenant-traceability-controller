@@ -3,7 +3,7 @@
 Copy the following to an `.env` file and fill in the values
 ```bash
 # internal service uri for the postgres DB 
-# ex: postgres://admin:p@ssword@postgres-svc:5432
+# ex: postgres://admin:p4ssword@postgres-svc:5432
 POSTGRES_URI: ""
 POSTGRES_USER: ""
 POSTGRES_PASSWORD: ""
