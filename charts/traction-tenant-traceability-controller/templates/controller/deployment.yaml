@@ -1,5 +1,5 @@
----
 {{- with .Values.controller }}
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -38,11 +38,11 @@ spec:
               protocol: TCP
           livenessProbe:
             httpGet:
-              path: /server/live
+              path: /status/live
               port: {{ .service.apiPort }}
           readinessProbe:
             httpGet:
-              path: /server/ready
+              path: /status/ready
               port: {{ .service.apiPort }}
           resources:
             {{- toYaml .resources | nindent 12 }}
