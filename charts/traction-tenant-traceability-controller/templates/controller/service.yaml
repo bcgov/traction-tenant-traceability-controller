@@ -1,18 +1,15 @@
-{{- with .Values.controller }}
----
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .fullname }}
+  name: {{ include "controller.fullname" . }}
   labels:
-    {{- toYaml .labels | nindent 4 }}
+    {{- include "controller.labels" . | nindent 4 }}
 spec:
-  type: {{ .service.type }}
+  type: {{ .Values.controller.service.type }}
   selector:
-    app: {{ .fullname }}
+    {{- include "controller.selectorLabels" . | nindent 4 }}
   ports:
-    - port: {{ .service.apiPort }}
-      targetPort: {{ .service.apiPort }}
+    - port: {{ .Values.controller.service.adminPort }}
+      targetPort: {{ .Values.controller.service.adminPort }}
       protocol: TCP
       name: api
-{{- end }}

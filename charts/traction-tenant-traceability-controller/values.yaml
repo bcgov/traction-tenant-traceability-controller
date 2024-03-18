@@ -1,38 +1,42 @@
 ---
 nameOverride: ""
-fullname: "traction-tenant-traceability-controller"
+fullnameOverride: "tttc"
 ingressSuffix: ""
 
 selectorLabels: {}
 
+openshift:
+  route:
+    path: "/"
+    tls:
+      enabled: true
+      insecureEdgeTerminationPolicy: None
+      termination: edge
+    wildcardPolicy: None
+    timeout: 2m
+
+ingress:
+  labels:
+    certbot-managed: false
+  annotations:
+    kubernetes.io/ingress.class: ""
+    route.openshift.io/termination: edge
+  
+networkPolicy:
+  ingress:
+    namespaceSelector:
+      network.openshift.io/policy-group: ingress
+
 controller:
-  fullname: controller
   image:
     repository: ghcr.io/bcgov/traction-tenant-traceability-controller
     pullPolicy: IfNotPresent
     pullSecrets: []
     tag: "interop"
 
-  labels:
-    app: controller
-
-  selectorLabels: {}
-
-  serviceAccount:
-    create: false
-    annotations: {}
-    automountServiceAccountToken: false
-    name: ""
+  host: traceability.interop.vonx.io
 
   replicaCount: 1
-
-  autoscaling:
-    enabled: false
-    minReplicas: 1
-    maxReplicas: 3
-    targetCPUUtilizationPercentage: 80
-    targetMemoryUtilizationPercentage: 80
-    stabilizationWindowSeconds: 300
 
   podAnnotations: {}
   podSecurityContext: {}
@@ -41,27 +45,6 @@ controller:
   service:
     type: ClusterIP
     apiPort: 8000
-
-  ingress:
-    enabled: true
-    annotations:
-      kubernetes.io/ingress.class: ""
-      route.openshift.io/termination: edge
-    tls: []
-
-  openshift:
-    route:
-      enabled: true
-      path: "/"
-      host: "traceability.interop.vonx.io"
-      tls:
-        enabled: false
-        insecureEdgeTerminationPolicy: None
-        termination: edge
-      wildcardPolicy: None
-      annotations:
-        haproxy.router.openshift.io/timeout: 2m
-        cert-manager.io/issuer-name: my-issuer
 
   resources:
     limits:
@@ -72,75 +55,29 @@ controller:
       memory: 128Mi
 
   networkPolicy:
-    enabled: true
     ingress:
-      enabled: true
-      namespaceSelector:
-        network.openshift.io/policy-group: ingress
       podSelector: {}
 
-  affinity: {}
-  nodeSelector: {}
-  tolerations: []
-
   environment:
-    POSTGRES_URI: ''
-    DID_NAMESPACE: ''
+    DID_NAMESPACE: 'organizations'
     TRACTION_API_KEY: ''
     TRACTION_TENANT_ID: ''
     TRACTION_API_ENDPOINT: ''
-    TRACEABILITY_CONTROLLER_DOMAIN: ''
-    VERIFIER_ENDPOINT: ''
 
 acapy:
-  fullname: acapy
   image:
     repository: ghcr.io/hyperledger/aries-cloudagent-python
     pullPolicy: IfNotPresent
     pullSecrets: []
     tag: py3.9-0.12.0rc2
 
-  labels:
-    - app: acapy
-
-  selectorLabels: {}
-
-  serviceAccount:
-    create: false
-    annotations: {}
-    automountServiceAccountToken: false
-    name: ""
-
   replicaCount: 1
-
-  autoscaling:
-    enabled: false
-    minReplicas: 1
-    maxReplicas: 3
-    targetCPUUtilizationPercentage: 80
-    targetMemoryUtilizationPercentage: 80
-    stabilizationWindowSeconds: 300
-
-  podAnnotations: {}
-  podSecurityContext: {}
-  containerSecurityContext: {}
+  labelOverride: ""
 
   service:
     type: ClusterIP
     adminPort: 8020
     httpPort: 8021
-
-  openshift:
-    route:
-      enabled: true
-      path: "/"
-      targetPort: http
-      timeout: 2m
-      tls:
-        enabled: false
-        insecureEdgeTerminationPolicy: None
-        termination: edge
-      wildcardPolicy: None
 
   resources:
     limits:
@@ -150,12 +87,12 @@ acapy:
       cpu: 250m
       memory: 384Mi
 
+  podAnnotations: {}
+  podSecurityContext: {}
+  containerSecurityContext: {}
+
   networkPolicy:
-    enabled: true
     ingress:
-      enabled: true
-      namespaceSelector:
-        network.openshift.io/policy-group: ingress
       podSelector: {}
 
   affinity: {}
@@ -164,7 +101,7 @@ acapy:
 
 postgresql:
   enabled: false
-  fullnameOverride: ""
+  fullnameOverride: "postgresql"
   architecture: standalone
   auth:
     enablePostgresUser: true
@@ -196,3 +133,7 @@ postgresql:
         postgresql: 5432
     extendedConfiguration: |
       max_connections = 500
+
+  networkPolicy:
+    ingress:
+      podSelector: {}

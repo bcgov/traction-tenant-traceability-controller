@@ -2,13 +2,13 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ include "acapy.fullname" . }}-ingress
+  name: {{ include "global.postgresql.fullname" . }}-ingress
   labels:
-    {{- include "acapy.labels" . | nindent 4 }}
+    {{- include "postgresql.labels" . | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
-      {{- include "acapy.selectorLabels" . | nindent 6 }}
+      {{- include "postgresql.selectorLabels" . | nindent 6 }}
   ingress:
     - from:
         - namespaceSelector:
@@ -20,17 +20,17 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ include "acapy.fullname" . }}
+  name: {{ include "global.postgresql.fullname" . }}
   labels:
-    {{- include "acapy.labels" . | nindent 4 }}
+    {{- include "postgresql.labels" . | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
-      {{- include "acapy.selectorLabels" . | nindent 6 }}
+      {{- include "postgresql.selectorLabels" . | nindent 6 }}
   ingress:
     - ports:
         - protocol: TCP
-          port: {{ .Values.acapy.service.adminPort }}
+          port: {{ .Values.postgresql.primary.service.ports.postgresql }}
       from:
         - podSelector:
             matchLabels:

@@ -1,23 +1,19 @@
-{{- with .Values.controller }}{{- if .openshift.route.enabled -}}
----
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: {{ .fullname }}
+  name: {{ include "controller.fullname" . }}
   annotations:
-    {{- toYaml .openshift.route.annotations | nindent 4 }}
+    haproxy.router.openshift.io/timeout: {{ .Values.openshift.route.timeout }}
   labels:
-    {{- toYaml .labels | nindent 4 }}
+    {{- include "controller.labels" . | nindent 4 }}
 spec:
-  host: {{ .openshift.route.host | quote }}
-  path: {{ .openshift.route.path }}
+  host: {{ .host | quote }}
+  path: {{ .Values.openshift.route.path }}
   to:
     kind: Service
-    name: {{ .fullName }}
+    name: {{ include "controller.fullname" . }}
     weight: 100
   port:
-    targetPort: {{ .service.apiPort }}
-  wildcardPolicy: {{ .openshift.route.wildcardPolicy }}
-  tls:
-    {{- toYaml .openshift.route.tls | nindent 4}}
-{{- end }}{{- end }}
+    targetPort: {{ .Values.controller.service.apiPort }}
+  wildcardPolicy: {{ .Values.openshift.route.wildcardPolicy }}
+{{ include "controller.openshift.route.tls" . | indent 2}}

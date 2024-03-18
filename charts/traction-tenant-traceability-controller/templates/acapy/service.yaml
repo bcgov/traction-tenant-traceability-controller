@@ -1,18 +1,15 @@
-{{- with .Values.acapy }}
----
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .fullname }}
+  name: {{ include "acapy.fullname" . }}
   labels:
-    {{- toYaml .labels | nindent 4 }}
+    {{- include "acapy.labels" . | nindent 4 }}
 spec:
-  type: {{ .service.type }}
+  type: {{ .Values.acapy.service.type }}
   selector:
-    app: {{ .fullname }}
+    {{- include "acapy.selectorLabels" . | nindent 4 }}
   ports:
-    - port: {{ .service.adminPort }}
-      targetPort: {{ .service.adminPort }}
+    - port: {{ .Values.acapy.service.adminPort }}
+      targetPort: {{ .Values.acapy.service.adminPort }}
       protocol: TCP
-      name: admin      
-{{- end }}
+      name: admin

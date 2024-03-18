@@ -2,12 +2,6 @@
 
 Copy the following to an `.env` file and fill in the values
 ```bash
-# internal service uri for the postgres DB 
-# ex: postgres://admin:p4ssword@postgres-svc:5432
-POSTGRES_URI: ""
-POSTGRES_USER: ""
-POSTGRES_PASSWORD: ""
-
 # the did namespace did:web:{domain}:{did_namespace}:{identifier}
 # ex: organizations, instances, identifiers, clients, tenants
 DID_NAMESPACE: 'organizations'
@@ -18,18 +12,8 @@ TRACTION_API_KEY: ''
 # Created tenant_id from a traction tenant account
 TRACTION_TENANT_ID: ''
 
-# url for the traction api endpoint 
-# ex: https://some.traction.api.example.com
+# url for the traction api endpoint
 TRACTION_API_ENDPOINT: ''
-
-# domain for the traceability controller endpoint 
-# ex: my.tttc.domain.example.com
-# this value will be used as the did:web: base 
-# ex: did:web:my.tttc.domain.example.com:organizations:xyz
-TRACEABILITY_CONTROLLER_DOMAIN: ''
-
-# internal service endpoint for the acapy verifier agent admin api
-VERIFIER_ENDPOINT: 'http://acapy:8020'
 ```
 
 To test the charts

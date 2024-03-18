@@ -1,55 +1,54 @@
-{{- with .Values.controller }}
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .fullname }}
+  name: {{ include "controller.fullname" . }}
   labels:
-    {{- toYaml .labels | nindent 4 }}
+    {{- include "controller.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .replicaCount }}
+  replicas: {{ .Values.controller.replicaCount }}
   selector:
     matchLabels:
-      {{- toYaml .labels | nindent 4 }}
+      {{- include "controller.selectorLabels" . | nindent 6 }}
   template:
     metadata:
+      annotations:
+        {{- toYaml .Values.controller.podAnnotations | nindent 8 }}
       labels:
-        {{- toYaml .labels | nindent 4 }}
+        {{- include "controller.selectorLabels" . | nindent 8 }}
     spec:
       imagePullSecrets:
-        {{- toYaml .image.pullSecrets | nindent 8 }}
+        {{- toYaml .Values.controller.image.pullSecrets | nindent 8 }}
       securityContext:
-        {{- toYaml .podSecurityContext | nindent 8 }}
+        {{- toYaml .Values.controller.podSecurityContext | nindent 8 }}
       containers:
-        - name: {{ .fullname }}
+        - name: {{ include "controller.fullname" . }}
           securityContext:
-            {{- toYaml .containerSecurityContext | nindent 12 }}
-          image: "{{ .image.repository }}:{{ .image.tag }}"
-          imagePullPolicy: {{ .image.pullPolicy }}
+            {{- toYaml .Values.controller.containerSecurityContext | nindent 12 }}
+          image: "{{ .Values.controller.image.repository }}:{{ .Values.controller.image.tag }}"
+          imagePullPolicy: {{ .Values.controller.image.pullPolicy }}
           env:
             - name: WORKERS
               value: 4
           envFrom:
             - secretRef:
-                name: {{ .fullname }}-environment
+                name: {{ include "controller.fullname" . }}-env
           ports:
             - name: api
-              containerPort: {{ .service.apiPort }}
+              containerPort: {{ .Values.controller.service.apiPort }}
               protocol: TCP
           livenessProbe:
             httpGet:
               path: /status/live
-              port: {{ .service.apiPort }}
+              port: {{ .Values.controller.service.apiPort }}
           readinessProbe:
             httpGet:
               path: /status/ready
-              port: {{ .service.apiPort }}
+              port: {{ .Values.controller.service.apiPort }}
           resources:
-            {{- toYaml .resources | nindent 12 }}
+            {{- toYaml .Values.controller.resources | nindent 12 }}
       nodeSelector:
-        {{- toYaml .nodeSelector | nindent 8 }}
+        {{- toYaml .Values.controller.nodeSelector | nindent 8 }}
       affinity:
-        {{- toYaml .affinity | nindent 8 }}
+        {{- toYaml .Values.controller.affinity | nindent 8 }}
       tolerations:
-        {{- toYaml .tolerations | nindent 8 }}
-{{- end }}
+        {{- toYaml .Values.controller.tolerations | nindent 8 }}
