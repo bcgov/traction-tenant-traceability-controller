@@ -77,7 +77,7 @@ jobs:
         with:
           push: true
           context: .
-          file: docker/oidc-controller/Dockerfile
+          file: docker/Dockerfile
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           target: main
