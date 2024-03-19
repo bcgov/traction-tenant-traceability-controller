@@ -16,15 +16,15 @@ api_router.include_router(credentials.router, prefix=f"/{settings.DID_NAMESPACE}
 api_router.include_router(presentations.router, prefix=f"/{settings.DID_NAMESPACE}")
 
 
-@api_router.get("/server/health", tags=["Server"], summary="Health check")
+@api_router.get("/status/healthy", tags=["Server"], summary="Health check")
 async def health_check():
     return JSONResponse(status_code=200, content={})
 
-@api_router.get("/server/status", tags=["Server"], summary="Status check")
+@api_router.get("/status/ready", tags=["Server"], summary="Status check")
 async def status_check():
     return JSONResponse(status_code=200, content={})
 
-@api_router.get("/server/live", tags=["Server"], summary="Live check")
+@api_router.get("/status/live", tags=["Server"], summary="Live check")
 async def live_check():
     return JSONResponse(status_code=200, content={})
 
