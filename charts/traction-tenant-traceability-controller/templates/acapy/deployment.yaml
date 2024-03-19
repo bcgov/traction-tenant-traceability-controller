@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "acapy.fullname" . }}
+  labels:
+    {{- include "acapy.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.acapy.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "acapy.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        {{- toYaml .Values.acapy.podAnnotations | nindent 8 }}
+      labels:
+        {{- include "acapy.selectorLabels" . | nindent 8 }}
+    spec:
+      imagePullSecrets:
+        {{- toYaml .Values.acapy.image.pullSecrets | nindent 8 }}
+      securityContext:
+        {{- toYaml .Values.acapy.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ include "acapy.fullname" . }}
+          securityContext:
+            {{- toYaml .Values.acapy.containerSecurityContext | nindent 12 }}
+          image: "{{ .Values.acapy.image.repository }}:{{ .Values.acapy.image.tag }}"
+          imagePullPolicy: {{ .Values.acapy.image.pullPolicy }}
+          command:
+          - /bin/bash
+          args: [
+            "-c",
+            "aca-py start \
+            --no-ledger \
+            --admin '0.0.0.0' {{ .Values.acapy.service.adminPort }} \
+            --admin-insecure-mode \
+            --endpoint http://agent:{{ .Values.acapy.service.httpPort }} \
+            --outbound-transport http \
+            --inbound-transport http '0.0.0.0' {{ .Values.acapy.service.httpPort }}"
+          ]
+          ports:
+            - name: admin
+              containerPort: {{ .Values.acapy.service.adminPort }}
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /status/ready
+              port: {{ .Values.acapy.service.adminPort }}
+            initialDelaySeconds: 60
+            periodSeconds: 10    
+          livenessProbe:
+            httpGet:
+              path: /status/live
+              port: {{ .Values.acapy.service.adminPort }}
+            initialDelaySeconds: 90
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.acapy.resources | nindent 12 }}
+      nodeSelector:
+        {{- toYaml .Values.acapy.nodeSelector | nindent 8 }}
+      affinity:
+        {{- toYaml .Values.acapy.affinity | nindent 8 }}
+      tolerations:
+        {{- toYaml .Values.acapy.tolerations | nindent 8 }}

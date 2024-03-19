@@ -1,0 +1,20 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "controller.fullname" . }}-ingress
+  labels:
+    {{- include "controller.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "controller.selectorLabels" . | nindent 6 }}
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              {{- toYaml .Values.networkPolicy.ingress.namespaceSelector | nindent 14 }}
+        - podSelector:
+            matchLabels:
+              {{- toYaml .Values.controller.networkPolicy.ingress.podSelector | nindent 14 }}
+  policyTypes:
+    - Ingress

@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "controller.fullname" . }}
+  annotations:
+    {{- toYaml .Values.ingress.annotations | nindent 4 }}
+  labels:
+    {{- toYaml .Values.ingress.labels | nindent 4 }}
+    {{- include "controller.labels" . | nindent 4 }}
+spec:
+  rules:
+  - host: {{ .Values.controller.host | quote }}
+    http:
+      paths:
+      - backend:
+          service:
+            name: {{ include "controller.fullname" . }}
+            port:
+              number: {{ .Values.controller.service.apiPort }}
+        path: /
+        pathType: ImplementationSpecific

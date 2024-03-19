@@ -1,0 +1,14 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "controller.fullname" . }}-env
+type: Opaque
+stringData:
+  POSTGRES_URI: postgres://{{ .Values.postgresql.auth.username }}:{{ .Values.postgresql.auth.secretKeys.userPasswordKey }}@{{ include "global.postgresql.fullname" . }}:{{ .Values.postgresql.primary.service.ports.postgresql }}
+  DID_NAMESPACE: {{ .Values.controller.environment.DID_NAMESPACE }}
+  TRACTION_API_KEY: {{ .Values.controller.environment.TRACTION_API_KEY }}
+  TRACTION_TENANT_ID: {{ .Values.controller.environment.TRACTION_TENANT_ID }}
+  TRACTION_API_ENDPOINT: {{ .Values.controller.environment.TRACTION_API_ENDPOINT }}
+  TRACEABILITY_CONTROLLER_DOMAIN: {{ .Values.controller.host }}
+  VERIFIER_ENDPOINT: http://{{ include "acapy.fullname" . }}:{{ .Values.acapy.service.adminPort }}

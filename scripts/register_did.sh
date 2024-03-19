@@ -1,9 +1,17 @@
 # /bin/bash
 
-source .env
+# source .env && \
+# curl -X 'POST' \
+#   "https://$TRACEABILITY_CONTROLLER_DOMAIN/$DID_NAMESPACE" \
+#   -H "accept: application/json" \
+#   -H "Content-Type: application/json" \
+#   -H "X-API-Key: $TRACTION_API_KEY" \
+#   -d '{}' | jq '.'
+
+source .env && \
 curl -X 'POST' \
-  "https://$TRACEABILITY_DOMAIN_NAME/register/did" \
+  "http://3.96.9.60:8080/$DID_NAMESPACE" \
   -H "accept: application/json" \
   -H "Content-Type: application/json" \
-  -H "X-API-Key: $TRACEABILITY_ADMIN_API_KEY" \
-  -d '{"label": "'$1'"}' | jq '.'
+  -H "X-API-Key: $TRACTION_API_KEY" \
+  -d '{}' | jq '.'

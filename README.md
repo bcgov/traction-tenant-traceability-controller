@@ -6,7 +6,7 @@ This repository is a traction controller implementing the [w3c-ccg Traceability 
 
 ## Getting Started
 
-Read the [Aries Traceability Getting Started Tutorial](./GettingStartedTutorial.md) to configure your own instance of the controller.
+Read the [Aries Traceability Getting Started Tutorial](./docs/GettingStartedTutorial.md) to configure your own instance of the controller.
 
 ## Getting Help or Reporting an Issue
 

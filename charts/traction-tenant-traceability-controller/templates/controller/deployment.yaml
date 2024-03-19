@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "controller.fullname" . }}
+  labels:
+    {{- include "controller.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.controller.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "controller.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        {{- toYaml .Values.controller.podAnnotations | nindent 8 }}
+      labels:
+        {{- include "controller.selectorLabels" . | nindent 8 }}
+    spec:
+      imagePullSecrets:
+        {{- toYaml .Values.controller.image.pullSecrets | nindent 8 }}
+      securityContext:
+        {{- toYaml .Values.controller.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ include "controller.fullname" . }}
+          securityContext:
+            {{- toYaml .Values.controller.containerSecurityContext | nindent 12 }}
+          image: "{{ .Values.controller.image.repository }}:{{ .Values.controller.image.tag }}"
+          imagePullPolicy: {{ .Values.controller.image.pullPolicy }}
+          env:
+            - name: WORKERS
+              value: 4
+          envFrom:
+            - secretRef:
+                name: {{ include "controller.fullname" . }}-env
+          ports:
+            - name: api
+              containerPort: {{ .Values.controller.service.apiPort }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /status/live
+              port: {{ .Values.controller.service.apiPort }}
+          readinessProbe:
+            httpGet:
+              path: /status/ready
+              port: {{ .Values.controller.service.apiPort }}
+          resources:
+            {{- toYaml .Values.controller.resources | nindent 12 }}
+      nodeSelector:
+        {{- toYaml .Values.controller.nodeSelector | nindent 8 }}
+      affinity:
+        {{- toYaml .Values.controller.affinity | nindent 8 }}
+      tolerations:
+        {{- toYaml .Values.controller.tolerations | nindent 8 }}

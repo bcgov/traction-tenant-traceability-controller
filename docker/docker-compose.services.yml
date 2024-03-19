@@ -1,0 +1,42 @@
+---
+version: '3'
+services:
+
+  agent:
+    image: bcgovimages/aries-cloudagent:py3.9-indy-1.16.0_0.12.0rc2
+    container_name: agent
+    restart: unless-stopped
+    networks:
+      - traceability
+    ports:
+      - 8020:8020
+    entrypoint: ["aca-py", "start"]
+    command: [
+      '--no-ledger',
+      '--admin', '0.0.0.0', '8020',
+      '--admin-insecure-mode',
+      '--endpoint', 'http://agent:8021',
+      '--outbound-transport', 'http',
+      '--inbound-transport', 'http', '0.0.0.0', '8021'
+    ]
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - traceability
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+volumes:
+  postgres_data:
+
+networks:
+  traceability:
+    name: traceability
+    external: true

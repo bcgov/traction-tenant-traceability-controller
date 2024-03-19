@@ -1,0 +1,139 @@
+---
+nameOverride: ""
+fullnameOverride: "tttc"
+ingressSuffix: ""
+
+selectorLabels: {}
+
+openshift:
+  route:
+    path: "/"
+    tls:
+      enabled: true
+      insecureEdgeTerminationPolicy: None
+      termination: edge
+    wildcardPolicy: None
+    timeout: 2m
+
+ingress:
+  labels:
+    certbot-managed: false
+  annotations:
+    kubernetes.io/ingress.class: ""
+    route.openshift.io/termination: edge
+  
+networkPolicy:
+  ingress:
+    namespaceSelector:
+      network.openshift.io/policy-group: ingress
+
+controller:
+  image:
+    repository: ghcr.io/bcgov/traction-tenant-traceability-controller
+    pullPolicy: IfNotPresent
+    pullSecrets: []
+    tag: "interop"
+
+  host: traceability.interop.vonx.io
+
+  replicaCount: 1
+
+  podAnnotations: {}
+  podSecurityContext: {}
+  containerSecurityContext: {}
+
+  service:
+    type: ClusterIP
+    apiPort: 8000
+
+  resources:
+    limits:
+      cpu: 100m
+      memory: 512Mi
+    requests:
+      cpu: 10m
+      memory: 128Mi
+
+  networkPolicy:
+    ingress:
+      podSelector: {}
+
+  environment:
+    DID_NAMESPACE: 'organizations'
+    TRACTION_API_KEY: ''
+    TRACTION_TENANT_ID: ''
+    TRACTION_API_ENDPOINT: ''
+
+acapy:
+  image:
+    repository: ghcr.io/hyperledger/aries-cloudagent-python
+    pullPolicy: IfNotPresent
+    pullSecrets: []
+    tag: py3.9-0.12.0rc2
+
+  replicaCount: 1
+  labelOverride: ""
+
+  service:
+    type: ClusterIP
+    adminPort: 8020
+    httpPort: 8021
+
+  resources:
+    limits:
+      cpu: "1"
+      memory: 1000Mi
+    requests:
+      cpu: 250m
+      memory: 384Mi
+
+  podAnnotations: {}
+  podSecurityContext: {}
+  containerSecurityContext: {}
+
+  networkPolicy:
+    ingress:
+      podSelector: {}
+
+  affinity: {}
+  nodeSelector: {}
+  tolerations: []
+
+postgresql:
+  enabled: false
+  fullnameOverride: "postgresql"
+  architecture: standalone
+  auth:
+    enablePostgresUser: true
+    existingSecret: '{{ include "global.fullname" . }}'
+    secretKeys:
+      adminPasswordKey: admin-password
+      userPasswordKey: database-password
+    database: traceability
+    username: traceability
+
+  ## PostgreSQL Primary parameters
+  primary:
+    persistence:
+      enabled: true
+      size: 1Gi
+    containerSecurityContext:
+      enabled: false
+    podSecurityContext:
+      enabled: false
+    resources:
+      limits:
+        cpu: 500m
+        memory: 500Mi
+      requests:
+        cpu: 100m
+        memory: 100Mi
+    service:
+      ports:
+        postgresql: 5432
+    extendedConfiguration: |
+      max_connections = 500
+
+  networkPolicy:
+    ingress:
+      podSelector: {}
