@@ -28,7 +28,7 @@ spec:
           imagePullPolicy: {{ .Values.controller.image.pullPolicy }}
           env:
             - name: WORKERS
-              value: 4
+              value: '4'
           envFrom:
             - secretRef:
                 name: {{ include "controller.fullname" . }}-env

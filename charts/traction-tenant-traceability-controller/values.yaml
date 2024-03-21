@@ -17,7 +17,7 @@ openshift:
 
 ingress:
   labels:
-    certbot-managed: false
+    certbot-managed: "false"
   annotations:
     kubernetes.io/ingress.class: ""
     route.openshift.io/termination: edge
@@ -29,10 +29,10 @@ networkPolicy:
 
 controller:
   image:
-    repository: ghcr.io/bcgov/traction-tenant-traceability-controller
+    repository: patstlouis91/traceability-controller
     pullPolicy: IfNotPresent
     pullSecrets: []
-    tag: "interop"
+    tag: dev-0.0.1
 
   host: traceability.interop.vonx.io
 
@@ -60,9 +60,9 @@ controller:
 
   environment:
     DID_NAMESPACE: 'organizations'
-    TRACTION_API_KEY: ''
-    TRACTION_TENANT_ID: ''
-    TRACTION_API_ENDPOINT: ''
+    TRACTION_API_KEY: '7f65e843fe4e4bc3ae58b676e4f5c7e7'
+    TRACTION_TENANT_ID: '4c3e7f1c-f006-4366-9222-9ef47b2f100f'
+    TRACTION_API_ENDPOINT: 'https://traction-sandbox-tenant-proxy.apps.silver.devops.gov.bc.ca'
 
 acapy:
   image:
@@ -100,12 +100,12 @@ acapy:
   tolerations: []
 
 postgresql:
-  enabled: false
+  enabled: true
   fullnameOverride: "postgresql"
   architecture: standalone
   auth:
     enablePostgresUser: true
-    existingSecret: '{{ include "global.fullname" . }}'
+    existingSecret: ''
     secretKeys:
       adminPasswordKey: admin-password
       userPasswordKey: database-password
