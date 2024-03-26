@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, Request, Security
 from app.models.web_requests import CreateDIDWebInput
-from app.validations import valid_did
-from app.controllers import auth, agent, status_list, did_web
+from app.controllers import auth
+from app.controllers.traction import TractionController
+from app.controllers.askar import AskarController
 from config import settings
+from app.utils import did_from_label
 from app.auth.bearer import JWTBearer
 from app.auth.handler import get_api_key
 import uuid
@@ -16,23 +18,19 @@ async def register_org_did(
     apiKey: str = Security(get_api_key),
 ):
     label = vars(request_body)["label"]
-
+    
     # Generate uuid if no label was provided
     did_label = label if label else str(uuid.uuid4())
 
-    # Register with traction
-    await did_web.register(did_label)
-    did = did_web.from_org_id(did_label)
-
-    # Create Status List VCs
-    # await status_list.create(did_label, "RevocationList2020")
-    await status_list.create(did_label, "StatusList2021", purpose="revocation")
+    traction = TractionController(did_label)
+    await traction.create_did()
+    await traction.create_status_list()
 
     # Generate client credentials and store hash
     client_id, client_secret = await auth.new_issuer_client(did_label)
 
     return {
-        "did": did,
+        "did": did_from_label(did_label),
         "client_id": client_id,
         "client_secret": client_secret,
         "token_audience": f"{settings.HTTPS_BASE}",
@@ -47,7 +45,28 @@ async def register_org_did(
     summary="Get a DID's latest keys, services and capabilities",
 )
 async def get_did(did_label: str):
-    return await did_web.get_did_document(did_label)
+    did = did_from_label(did_label)
+    return {
+        '@context': [
+            "https://www.w3.org/ns/did/v1",
+            "https://w3id.org/security/v2",
+            "https://w3id.org/traceability/v1"
+        ],
+        'id': did,
+        'verificationMethod': [{
+            'id': f'{did}#verkey',
+            'type': 'Ed25519VerificationKey2018',
+            'controller': did,
+            'publicKeyBase58': await AskarController(did_label).fetch('verkey')
+        }],
+        'authentication': [ f'{did}#verkey'],
+        'assertionMethod': [ f'{did}#verkey'],
+        'service': [{
+            'id': f'{did}#traceability-api',
+            'type': ["TraceabilityAPI"],
+            'serviceEndpoint': f'{settings.HTTPS_BASE}/{settings.DID_NAMESPACE}/{did_label}'
+        }]
+    }
 
 
 @router.get(
@@ -58,7 +77,4 @@ async def get_did(did_label: str):
 )
 async def get_did(did_label: str, did: str, request: Request):
     await auth.is_authorized(did_label, request)
-    valid_did(did)
-    did_document = agent.resolve_did(did)
-
-    return {"didDocument": did_document}
+    return {"didDocument": TractionController(did_label).resolve_did(did)}

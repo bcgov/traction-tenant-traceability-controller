@@ -6,11 +6,27 @@ import hashlib
 from hashlib import sha256
 from app.controllers import askar
 from aries_askar.bindings import generate_raw_key
+from bitstring import BitArray
+import gzip, base64
 
 
 def generate_client_hash(client_secret, client_id):
     return str(uuid.uuid5(client_secret, client_id))
 
+def bitstring_generate(bitstring):
+    # https://www.w3.org/TR/vc-bitstring-status-list/#bitstring-generation-algorithm
+    statusListBitarray = BitArray(bin=bitstring)
+    statusListCompressed = gzip.compress(statusListBitarray.bytes)
+    statusList_encoded = base64.urlsafe_b64encode(statusListCompressed).decode("utf-8")
+    return statusList_encoded
+
+def bitstring_expand(encoded_list):
+    # https://www.w3.org/TR/vc-bitstring-status-list/#bitstring-expansion-algorithm
+    statusListCompressed = base64.urlsafe_b64decode(encoded_list)
+    statusListBytes = gzip.decompress(statusListCompressed)
+    statusListBitarray = BitArray(bytes=statusListBytes)
+    statusListBitstring = statusListBitarray.bin
+    return statusListBitstring
 
 def did_from_label(did_label):
     return f"{settings.DID_WEB_BASE}:{settings.DID_NAMESPACE}:{did_label}"

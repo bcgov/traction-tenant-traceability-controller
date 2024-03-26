@@ -4,82 +4,48 @@ from config import settings
 import time
 from app.validations import ValidationException
 
+class AskarController:
+    
+    def __init__(self, db='traceability'):
+        self.db = f'{settings.POSTGRES_URI}/{db}'
+        self.key = settings.ASKAR_KEY
 
-def holderClientHashesDataKey(did_label):
-    """OAuth client who will send presentations `/presentations`"""
-    return f"holderClientHashes"
-
-
-def issuerClientHashesDataKey():
-    """OAuth client who will issue credentials `/credentials/issue`"""
-    return f"issuerClientHashes"
-
-
-def didDocumentDataKey(did_label):
-    """Controller documents for web DIDs"""
-    return f"didDocuments:{did_label}"
-
-
-def statusEntriesDataKey(did_label, statusCredentialId):
-    """List of registered indexes in a status list"""
-    return f"statusEntries:{did_label}:{statusCredentialId}"
-
-
-def statusCredentialDataKey(did_label, statusCredentialId):
-    """Status list credential maintained by an issuer"""
-    return f"statusCredentials:{did_label}:{statusCredentialId}"
-
-
-def issuedCredentialDataKey(did_label, credentialId):
-    """Issued credentials of an issuer"""
-    return f"issuedCredentials:{did_label}:{credentialId}"
-
-
-def recievedCredentialDataKey(did_label, credentialId):
-    """Credentials recieved through a presentation exchange"""
-    return f"storedCredentials:{did_label}:{credentialId}"
-
-
-async def provision_public_store():
-    await Store.provision(
-        settings.ASKAR_PUBLIC_STORE,
-        "raw",
-        settings.ASKAR_PUBLIC_STORE_KEY,
-        recreate=False,
-    )
-
-
-async def open_store(key):
-    return await Store.open(settings.ASKAR_PUBLIC_STORE, "raw", key)
-
-
-async def store_data(storeKey, dataKey, data):
-    store = await open_store(storeKey)
-    async with store.session() as session:
-        await session.insert(
-            "seq",
-            dataKey.lower(),
-            json.dumps(data),
-            {"~plaintag": "a", "enctag": "b"},
+    async def provision(self):
+        await Store.provision(
+            self.db,
+            "raw",
+            self.key,
+            recreate=False,
         )
 
+    async def open(self):
+        return await Store.open(self.db, "raw", self.key)
 
-async def fetch_data(storeKey, dataKey):
-    store = await open_store(storeKey)
-    async with store.session() as session:
-        data = await session.fetch("seq", dataKey.lower())
-    return json.loads(data.value)
+    async def fetch(self, data_key):
+        store = await self.open()
+        async with store.session() as session:
+            data = await session.fetch("seq", data_key)
+        return json.loads(data.value)
 
+    async def store(self, data_key, data):
+        store = await self.open()
+        async with store.session() as session:
+            await session.insert(
+                "seq",
+                data_key,
+                json.dumps(data),
+                {"~plaintag": "a", "enctag": "b"},
+            )
 
-async def update_data(storeKey, dataKey, new_data):
-    store = await open_store(storeKey)
-    async with store.session() as session:
-        await session.replace(
-            "seq",
-            dataKey.lower(),
-            json.dumps(new_data),
-            {"~plaintag": "a", "enctag": "b"},
-        )
+    async def update(self, data_key, data):
+        store = await self.open()
+        async with store.session() as session:
+            await session.replace(
+                "seq",
+                data_key,
+                json.dumps(data),
+                {"~plaintag": "a", "enctag": "b"},
+            )
 
 
 async def find_api_key(storeKey, apiKeyHash):
