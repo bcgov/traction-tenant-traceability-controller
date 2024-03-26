@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Form
+from fastapi.responses import JSONResponse
 from typing import Annotated
 from config import settings
 from app.controllers import auth
@@ -16,4 +17,5 @@ async def oauth(
     expires_in = 600
     payload = {"client_id": client_id, "expires": int(time.time()) + expires_in}
     token = jwt.encode(payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
-    return {"access_token": token, "token_type": "Bearer", "expires_in": expires_in}
+    response = {"access_token": token, "token_type": "Bearer", "expires_in": expires_in}
+    return JSONResponse(status_code=200, content=response)

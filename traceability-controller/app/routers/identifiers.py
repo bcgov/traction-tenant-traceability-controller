@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Request, Security
+from fastapi.responses import JSONResponse
 from app.models.web_requests import CreateDIDWebInput
 from app.controllers import auth
 from app.controllers.traction import TractionController
@@ -28,15 +29,16 @@ async def register_org_did(
 
     # Generate client credentials and store hash
     client_id, client_secret = await auth.new_issuer_client(did_label)
-
-    return {
+    response = {
         "did": did_from_label(did_label),
-        "client_id": client_id,
+        "client_id": str(client_id),
         "client_secret": client_secret,
         "token_audience": f"{settings.HTTPS_BASE}",
         "token_endpoint": f"{settings.HTTPS_BASE}/oauth/token",
         "service_endpoint": f"{settings.HTTPS_BASE}/{settings.DID_NAMESPACE}/{did_label}",
     }
+
+    return JSONResponse(status_code=201, content=response)
 
 
 @router.get(
@@ -46,7 +48,7 @@ async def register_org_did(
 )
 async def get_did(did_label: str):
     did = did_from_label(did_label)
-    return {
+    did_document = {
         '@context': [
             "https://www.w3.org/ns/did/v1",
             "https://w3id.org/security/v2",
@@ -67,6 +69,7 @@ async def get_did(did_label: str):
             'serviceEndpoint': f'{settings.HTTPS_BASE}/{settings.DID_NAMESPACE}/{did_label}'
         }]
     }
+    return JSONResponse(status_code=200, content=did_document)
 
 
 @router.get(
@@ -77,4 +80,5 @@ async def get_did(did_label: str):
 )
 async def get_did(did_label: str, did: str, request: Request):
     await auth.is_authorized(did_label, request)
-    return {"didDocument": TractionController(did_label).resolve_did(did)}
+    response = {"didDocument": TractionController(did_label).resolve_did(did)}
+    return JSONResponse(status_code=200, content=response)

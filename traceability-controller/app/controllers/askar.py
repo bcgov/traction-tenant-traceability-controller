@@ -3,12 +3,13 @@ from aries_askar import Store, error
 from config import settings
 import time
 from app.validations import ValidationException
+from aries_askar.bindings import generate_raw_key
 
 class AskarController:
     
-    def __init__(self, db='traceability'):
+    def __init__(self, db=settings.ASKAR_DEFAULT_DB):
         self.db = f'{settings.POSTGRES_URI}/{db}'
-        self.key = settings.ASKAR_KEY
+        self.key = generate_raw_key(settings.TRACTION_API_KEY)
 
     async def provision(self):
         await Store.provision(

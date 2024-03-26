@@ -1,10 +1,9 @@
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
 from config import settings
-from app.validations import ValidationException
 from app.controllers.traction import TractionController
 from app.controllers.askar import AskarController
-from app.controllers import status_list, askar, auth
+from app.controllers import auth
 from app.models.web_requests import (
     IssueCredentialSchema,
     UpdateCredentialStatusSchema,
@@ -24,7 +23,8 @@ router = APIRouter()
 )
 async def get_credential(did_label: str, credential_id: str, request: Request):
     await auth.is_authorized(did_label, request)
-    return await askar.get_credential(did_label, credential_id)
+    credential = await AskarController(did_label).fetch(f'credentials:{credential_id}')
+    return JSONResponse(status_code=200, content=credential)
 
 
 @router.post(
@@ -52,14 +52,13 @@ async def issue_credential(
         credential["id"] = f"urn:uuid:{str(uuid.uuid4())}"
 
     # Fill status information
-    # if "credentialStatus" in options:
     credential['@context'].append('https://w3id.org/vc/status-list/2021/v1')
     credential['credentialStatus'] = await traction.create_status_entry()
 
     # TODO use new issuance endpoint
     vc = await traction.sign_json_ld(credential)
-    if 'created' in options:
-        vc['proof']['created'] = options['created']
+    # if 'created' in options:
+    #     vc['proof']['created'] = options['created']
 
     credential_id = credential["id"]
     await AskarController(did_label).store(f'credentials:{credential_id}', vc)
@@ -97,42 +96,7 @@ async def update_credential_status(
     request_body = request_body.model_dump(by_alias=True, exclude_none=True)
     credential_id = request_body["credentialId"]
     credential_status = request_body["credentialStatus"]
-
-    # We find which status bit to update
-    status_bit = credential_status[0]["status"]
-    status_type = credential_status[0]["type"]
-    if (
-        credential_status[0]["type"] in ["StatusList2021Entry"]
-        and "statusPurpose" not in credential_status[0]
-    ):
-        raise ValidationException(
-            status_code=400, content={"message": "Missing purpose"}
-        )
-
-    # We fetch the issued credential based on the credential ID
-    data_key = askar.issuedCredentialDataKey(did_label, credential_id)
-    vc = await askar.fetch_data(settings.ASKAR_PUBLIC_STORE_KEY, data_key)
-
-    # Make sure the payload refers to the correct status list type
-    if vc["credentialStatus"]["type"] != status_type:
-        return ValidationException(
-            status_code=400,
-            content={"message": f"Status list type mismatch"},
-        )
-    if status_type == "RevocationList2020Status":
-        status_credential_id = status_list_type = "RevocationList2020"
-        status_credential = await status_list.change_credential_status(
-            vc, status_bit, did_label, status_list_type
-        )
-    elif status_type == "StatusList2021Entry":
-        status_credential_id = status_list_type = "StatusList2021"
-        status_credential = await status_list.change_credential_status(
-            vc, status_bit, did_label, status_list_type
-        )
-
-    # Store the new credential
-    data_key = askar.statusCredentialDataKey(did_label, status_credential_id)
-    await askar.update_data(settings.ASKAR_PUBLIC_STORE_KEY, data_key, status_credential)
+    await TractionController(did_label).change_credential_status(credential_id, credential_status)
 
     return JSONResponse(status_code=200, content={"message": "Status updated"})
 
@@ -143,4 +107,5 @@ async def update_credential_status(
     summary="Returns a status list credential",
 )
 async def get_status_list_credential(did_label: str, status_credential_id: str):
-    return await TractionController(did_label).get_status_list_credential()
+    status_credential = await TractionController(did_label).get_status_list_credential()
+    return JSONResponse(status_code=200, content=status_credential)

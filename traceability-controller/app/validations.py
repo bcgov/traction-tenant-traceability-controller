@@ -20,6 +20,11 @@ def valid_credential_subject(credential_subject):
         raise ValueError("Invalid subject id")
 
 
+def valid_status_purpose(status_purpose):
+    if not isinstance(status_purpose, str):
+        raise ValueError("Invalid status purpose")
+
+
 def valid_context_v1(context):
     if len(context) < 1:
         raise ValueError("Must have items")

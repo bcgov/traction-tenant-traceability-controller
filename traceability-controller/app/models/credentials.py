@@ -8,6 +8,7 @@ from app.validations import (
     valid_type,
     valid_context_v1,
     valid_status_update_value,
+    valid_status_purpose
 )
 from .proofs import Proof
 
@@ -136,7 +137,7 @@ class IssuanceOptions(BaseModel):
 class CredentialStatusUpdateItem(BaseModel):
     type: str = Field()
     status: str = Field()
-    status_purpose: str = Field(None, alias="statusPurpose")
+    status_purpose: str = Field(alias="statusPurpose")
 
     @field_validator("type")
     @classmethod
@@ -148,4 +149,10 @@ class CredentialStatusUpdateItem(BaseModel):
     @classmethod
     def validate_status(cls, value):
         valid_status_update_value(value)
+        return value
+
+    @field_validator("status_purpose")
+    @classmethod
+    def validate_status_purpose(cls, value):
+        valid_status_purpose(value)
         return value

@@ -3,7 +3,6 @@ from app.controllers.askar import AskarController
 import asyncio
 
 if __name__ == "__main__":
-    # Provision askar public store
     asyncio.run(AskarController().provision())
     uvicorn.run(
         "app.api:app",

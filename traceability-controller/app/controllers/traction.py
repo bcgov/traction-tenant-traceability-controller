@@ -1,21 +1,19 @@
 import requests
 from config import settings
-from app.models.did_document import DidDocument
 from app.controllers.askar import AskarController
 from app.utils import did_from_label, bitstring_generate, bitstring_expand
 from app.validations import ValidationException
-from app.validations import valid_did
-from datetime import datetime
+from datetime import datetime, timedelta
 import uuid
 import random
 
 class TractionController:
     def __init__(self, did_label):
+        self.did_label = did_label
+        self.did = did_from_label(did_label)
         self.endpoint = settings.TRACTION_API_ENDPOINT
         self.tenant_id = settings.TRACTION_TENANT_ID
         self.api_key = settings.TRACTION_API_KEY
-        self.did_label = did_label
-        self.did = did_from_label(did_label)
         
         endpoint = f"{self.endpoint}/multitenancy/tenant/{self.tenant_id}/token"
         body = {"api_key": self.api_key}
@@ -72,10 +70,9 @@ class TractionController:
                 "statusPurpose": purpose
             },
         }
-        status_list_vc = await self.sign_json_ld(status_list_credential)
         status_entries = [0, settings.STATUS_LIST_LENGHT - 1]
 
-        await AskarController(self.did_label).store('statusListCredential', status_list_vc)
+        await AskarController(self.did_label).store('statusListCredential', status_list_credential)
         await AskarController(self.did_label).store('statusListEntries', status_entries)
             
     async def create_status_entry(self, purpose='revocation'):
@@ -105,7 +102,10 @@ class TractionController:
     
     async def get_status_list_credential(self):
         try:
-            return await AskarController(self.did_label).fetch('statusListCredential')
+            status_list_credential = await AskarController(self.did_label).fetch('statusListCredential')
+            status_list_credential['expirationDate'] = str((datetime.now()+timedelta(minutes=5)).isoformat())
+            status_list_vc = await self.sign_json_ld(status_list_credential)
+            return status_list_vc
         except:
             return ValidationException(
                 status_code=404,
@@ -126,6 +126,24 @@ class TractionController:
         status_list = list(status_list_bitstring)
         status_bit = status_list[status_index]
         return True if status_bit == "1" else False
+
+
+    async def change_credential_status(self, credential_id, status):
+        vc = await AskarController(self.did_label).fetch(f'credentials:{credential_id}')
+        status_index = vc["credentialStatus"]["statusListIndex"]
+        status_bit = status[0]["status"]
+        status_list_credential = await AskarController(self.did_label).fetch('statusListCredential')
+        status_list_encoded = status_list_credential["credentialSubject"]["encodedList"]
+        status_list_bitstring = bitstring_expand(status_list_encoded)
+        status_list = list(status_list_bitstring)
+
+        status_list[status_index] = status_bit
+        status_list_bitstring = "".join(status_list)
+        status_list_encoded = bitstring_generate(status_list_bitstring)
+
+        status_list_credential["credentialSubject"]["encodedList"] = status_list_encoded
+        
+        await AskarController(self.did_label).update('statusListCredential', status_list_credential)
 
     def resolve_did(self, did):
         # TODO, improve did validation
@@ -171,7 +189,7 @@ class TractionController:
     async def sign_json_ld(self, credential):
         options = {
             'type': 'Ed25519Signature2018',
-            'proofPurpose': 'AssertionMethod',
+            'proofPurpose': 'assertionMethod',
             'verificationMethod': f'{self.did}#verkey'
         }
         verkey = await AskarController(self.did_label).fetch('verkey')
@@ -208,11 +226,15 @@ class TractionController:
                 status_code=r.status_code, content={"message": r.text}
             )
             
+        verifications.pop('document')
+        verifications.pop('results')
         verifications['checks'] = ['proof']
         verifications['errors'] = [verifications['errors']] if 'errors' in verifications else []
+        verifications['verified'] = True if len(verifications['errors']) == 0 else False
         
         if "credentialStatus" in vc:
             if self.get_credential_status(vc):
+                verifications['verified'] = False
                 verifications['errors'].append('status')
             verifications['checks'].append('status')
             
@@ -227,7 +249,6 @@ class TractionController:
                 verifications['errors'].append('expirationDate')
             verifications['checks'].append('expirationDate')
             
-        verifications['verified'] = True if len(verifications['errors']) == 0 else False
             
         return verifications
 

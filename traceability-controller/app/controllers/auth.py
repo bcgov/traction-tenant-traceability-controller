@@ -49,7 +49,7 @@ async def new_issuer_client(did_label):
     client_id = uuid.uuid4()
     client_secret = secrets.token_urlsafe(24)
     client_hash = uuid.uuid5(client_id, client_secret)
-    await AskarController().store(f'clientHash:{client_id}', str(client_hash))
+    await AskarController().store(f'clientHash:{str(client_id)}', str(client_hash))
     await AskarController(db=did_label).store('clientId', str(client_id))
 
-    return client_id, client_secret
+    return str(client_id), client_secret
