@@ -27,8 +27,9 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 
   traceability-api:
-    build:
-      context: ./traceability-controller
+    image: patstlouis91/traceability-controller:interop-0.0.1
+    # build:
+    #   context: ./traceability-controller
     ports:
       - 8000:8000
     entrypoint: ["python", "main.py"]
