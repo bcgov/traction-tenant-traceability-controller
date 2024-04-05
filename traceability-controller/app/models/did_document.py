@@ -20,32 +20,32 @@ class VerificationMethod(BaseModel):
 class DidDocument(BaseModel):
     id: str = Field()
     context: List[str] = Field(
-        alias="@context", default=["https://www.w3.org/ns/did/v1"]
+        alias="@context", default=[
+            "https://www.w3.org/ns/did/v1",
+            "https://w3id.org/security/v2",
+            "https://w3id.org/traceability/v1"
+        ]
     )
-    service: List[Service] = []
-    authentication: List[Union[str, VerificationMethod]] = []
-    assertionMethod: List[Union[str, VerificationMethod]] = []
-    verificationMethod: List[VerificationMethod] = []
+    service: List[Service] = Field(default=[])
+    authentication: List[Union[str, VerificationMethod]] = Field(default=[])
+    assertionMethod: List[Union[str, VerificationMethod]] = Field(default=[])
+    verificationMethod: List[VerificationMethod] = Field(default=[])
 
-    def add_verkey(self, verkey, verkey_type):
-        if verkey_type == "Ed25519VerificationKey2018":
-            self.context.append("https://w3id.org/security/v2")
-            self.authentication.append(f"{self.id}#verkey")
-            self.assertionMethod.append(f"{self.id}#verkey")
-            verification_method = VerificationMethod(
-                id=f"{self.id}#verkey",
-                type=verkey_type,
-                controller=self.id,
-                publicKeyBase58=verkey,
-            )
-            self.verificationMethod.append(verification_method)
+    def add_verkey(self, verkey):
+        verification_method = VerificationMethod(
+            id=f"{self.id}#verkey",
+            type="Ed25519VerificationKey2018",
+            controller=self.id,
+            publicKeyBase58=verkey,
+        )
+        self.verificationMethod.append(verification_method)
+        self.authentication.append(f"{self.id}#verkey")
+        self.assertionMethod.append(f"{self.id}#verkey")
 
-    def add_service(self, service):
-        if service == "TraceabilityAPI":
-            self.context.append("https://w3id.org/traceability/v1")
-            service = Service(
-                id=f"{self.id}#traceability-api",
-                type=["TraceabilityAPI"],
-                serviceEndpoint=f"{settings.HTTPS_BASE}/{settings.DID_NAMESPACE}/{self.id.split(':')[-1]}",
-            )
-            self.service.append(service)
+    def add_service(self):
+        service = Service(
+            id=f"{self.id}#traceability-api",
+            type=["TraceabilityAPI"],
+            serviceEndpoint=f"{settings.HTTPS_BASE}/{settings.DID_NAMESPACE}/{self.id.split(':')[-1]}",
+        )
+        self.service.append(service)
