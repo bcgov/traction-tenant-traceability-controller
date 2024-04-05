@@ -4,16 +4,16 @@ Copy the following to an `.env` file and fill in the values
 ```bash
 # the did namespace did:web:{domain}:{did_namespace}:{identifier}
 # ex: organizations, instances, identifiers, clients, tenants
-DID_NAMESPACE: 'organizations'
+DID_NAMESPACE='organizations'
 
 # Created api key from a traction tenant account
-TRACTION_API_KEY: ''
+TRACTION_API_KEY=''
 
 # Created tenant_id from a traction tenant account
-TRACTION_TENANT_ID: ''
+TRACTION_TENANT_ID=''
 
 # url for the traction api endpoint
-TRACTION_API_ENDPOINT: ''
+TRACTION_API_ENDPOINT=''
 ```
 
 To test the charts
