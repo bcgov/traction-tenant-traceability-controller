@@ -101,7 +101,7 @@ acapy:
 
 postgresql:
   enabled: true
-  fullnameOverride: "postgresql"
+  fullnameOverride: "tttc-postgresql"
   architecture: standalone
   auth:
     enablePostgresUser: true
