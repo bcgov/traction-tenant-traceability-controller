@@ -38,13 +38,13 @@ spec:
               path: /status/live
               port: {{ .Values.controller.service.apiPort }}
             failureThreshold: 2
-            initialDelaySeconds: 5
+            initialDelaySeconds: 60
             periodSeconds: 5
           readinessProbe:
             httpGet:
               path: /status/ready
               port: {{ .Values.controller.service.apiPort }}
-            initialDelaySeconds: 5
+            initialDelaySeconds: 60
           resources:
             {{- toYaml .Values.controller.resources | nindent 12 }}
       nodeSelector:
