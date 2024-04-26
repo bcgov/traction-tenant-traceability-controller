@@ -29,6 +29,12 @@ spec:
           envFrom:
             - secretRef:
                 name: {{ include "controller.fullname" . }}-env
+          env:
+            - name: POSTGRES_PASS
+              valueFrom:
+                configMapKeyRef:
+                  name: postgresql
+                  key: admin-password
           ports:
             - name: api
               containerPort: {{ .Values.controller.service.apiPort }}
