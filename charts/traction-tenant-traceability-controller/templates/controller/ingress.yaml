@@ -8,6 +8,10 @@ metadata:
     {{- toYaml .Values.ingress.labels | nindent 4 }}
     {{- include "controller.labels" . | nindent 4 }}
 spec:
+  tls:
+  - hosts:
+      - {{ .Values.controller.host | quote }}
+    secretName: {{ .Values.fullnameOverride }}-tls
   rules:
   - host: {{ .Values.controller.host | quote }}
     http:
