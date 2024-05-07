@@ -1,0 +1,8 @@
+nameOverride: "tttc"
+fullnameOverride: "tttc"
+
+ingress:
+  labels:
+    certbot-managed: "true"
+
+  host: traceability-dev.interop.vonx.io
