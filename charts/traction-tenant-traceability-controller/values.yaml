@@ -1,5 +1,5 @@
 ---
-nameOverride: ""
+nameOverride: "tttc"
 fullnameOverride: "tttc"
 ingressSuffix: ""
 
@@ -21,7 +21,7 @@ ingress:
   annotations:
     kubernetes.io/ingress.class: ""
     route.openshift.io/termination: edge
-  
+
 networkPolicy:
   ingress:
     namespaceSelector:
@@ -29,12 +29,12 @@ networkPolicy:
 
 controller:
   image:
-    repository: patstlouis91/traceability-controller
+    repository: ghcr.io/bcgov/traction-tenant-traceability-controller
     pullPolicy: IfNotPresent
     pullSecrets: []
-    tag: dev-0.0.1
+    tag: interop-0.1.0
 
-  host: traceability.interop.vonx.io
+  host: traceability-dev.interop.vonx.io
 
   replicaCount: 1
 
@@ -59,17 +59,17 @@ controller:
       podSelector: {}
 
   environment:
-    DID_NAMESPACE: 'organization'
-    TRACTION_API_KEY: ''
-    TRACTION_TENANT_ID: ''
-    TRACTION_API_ENDPOINT: ''
+    DID_NAMESPACE: "organization"
+    TRACTION_API_KEY: ""
+    TRACTION_TENANT_ID: ""
+    TRACTION_API_ENDPOINT: ""
 
 acapy:
   image:
     repository: ghcr.io/hyperledger/aries-cloudagent-python
     pullPolicy: IfNotPresent
     pullSecrets: []
-    tag: py3.9-0.12.0rc2
+    tag: py3.9-0.12.1
 
   replicaCount: 1
   labelOverride: ""
@@ -106,7 +106,7 @@ postgresql:
   architecture: standalone
   auth:
     enablePostgresUser: true
-    existingSecret: ''
+    existingSecret: ""
     secretKeys:
       adminPasswordKey: admin-password
       userPasswordKey: database-password
