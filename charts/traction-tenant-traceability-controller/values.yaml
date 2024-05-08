@@ -45,6 +45,7 @@ controller:
   service:
     type: ClusterIP
     apiPort: 8000
+    servicePort: 80
 
   resources:
     limits:

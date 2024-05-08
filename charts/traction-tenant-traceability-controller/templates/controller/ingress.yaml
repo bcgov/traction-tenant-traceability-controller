@@ -20,6 +20,6 @@ spec:
           service:
             name: {{ include "controller.fullname" . }}
             port:
-              number: {{ .Values.controller.service.apiPort }}
+              number: {{ .Values.controller.service.servicePort }}
         path: /
         pathType: ImplementationSpecific
