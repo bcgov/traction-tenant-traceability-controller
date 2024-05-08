@@ -32,7 +32,7 @@ spec:
           env:
             - name: POSTGRES_PASS
               valueFrom:
-                configMapKeyRef:
+                secretKeyRef:
                   name: postgresql
                   key: admin-password
           ports:
