@@ -5,7 +5,6 @@ metadata:
   name: {{ include "controller.fullname" . }}-env
 type: Opaque
 stringData:
-  POSTGRES_URI: postgres://{{ .Values.postgresql.auth.username }}:$(POSTGRES_PASS)@{{ include "global.postgresql.fullname" . }}:{{ .Values.postgresql.primary.service.ports.postgresql }}
   DID_NAMESPACE: {{ .Values.controller.environment.DID_NAMESPACE }}
   TRACTION_API_KEY: {{ .Values.controller.environment.TRACTION_API_KEY }}
   TRACTION_TENANT_ID: {{ .Values.controller.environment.TRACTION_TENANT_ID }}
