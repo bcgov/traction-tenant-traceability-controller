@@ -5,4 +5,7 @@ ingress:
   labels:
     certbot-managed: "true"
 
+controller:
   host: traceability-dev.interop.vonx.io
+  environment:
+    TRACTION_API_ENDPOINT: "https://traction-tenant-proxy-dev.apps.silver.devops.gov.bc.ca"

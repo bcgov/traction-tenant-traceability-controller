@@ -1,5 +1,11 @@
+nameOverride: "tttc"
+fullnameOverride: "tttc"
+
 ingress:
   labels:
     certbot-managed: "true"
 
+controller:
   host: traceability.interop.vonx.io
+  environment:
+    TRACTION_API_ENDPOINT: "https://traction-tenant-proxy-test.apps.silver.devops.gov.bc.ca"

@@ -34,9 +34,9 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: tttc-postgresql
-                  key: postgres-password
+                  key: password
             - name: POSTGRES_URI
-              value: postgres://{{ .Values.postgresql.auth.username }}:$(POSTGRES_PASS)@{{ include "global.postgresql.fullname" . }}:{{ .Values.postgresql.primary.service.ports.postgresql }}
+              value: postgres://{{ .Values.postgresql.auth.username }}:$(POSTGRES_PASSWORD)@{{ include "global.postgresql.fullname" . }}:{{ .Values.postgresql.primary.service.ports.postgresql }}
           ports:
             - name: api
               containerPort: {{ .Values.controller.service.apiPort }}
