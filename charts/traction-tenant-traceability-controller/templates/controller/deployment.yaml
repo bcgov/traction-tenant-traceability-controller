@@ -29,6 +29,14 @@ spec:
           envFrom:
             - secretRef:
                 name: {{ include "controller.fullname" . }}-env
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: tttc-postgresql
+                  key: postgres-password
+            - name: POSTGRES_URI
+              value: postgres://{{ .Values.postgresql.auth.username }}:$(POSTGRES_PASS)@{{ include "global.postgresql.fullname" . }}:{{ .Values.postgresql.primary.service.ports.postgresql }}
           ports:
             - name: api
               containerPort: {{ .Values.controller.service.apiPort }}
