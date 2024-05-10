@@ -1,0 +1,5 @@
+ingress:
+  labels:
+    certbot-managed: "true"
+
+  host: traceability.interop.vonx.io
