@@ -9,7 +9,7 @@ spec:
   selector:
     {{- include "controller.selectorLabels" . | nindent 4 }}
   ports:
-    - port: 80
+    - port: {{ .Values.controller.service.servicePort }}
       targetPort: {{ .Values.controller.service.apiPort }}
       protocol: TCP
       name: api
