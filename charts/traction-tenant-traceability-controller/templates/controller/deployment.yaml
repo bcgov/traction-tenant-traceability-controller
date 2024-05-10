@@ -33,8 +33,8 @@ spec:
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: postgresql
-                  key: admin-password
+                  name: tttc-postgresql
+                  key: postgres-password
             - name: POSTGRES_URI
               value: postgres://{{ .Values.postgresql.auth.username }}:$(POSTGRES_PASS)@{{ include "global.postgresql.fullname" . }}:{{ .Values.postgresql.primary.service.ports.postgresql }}
           ports:
