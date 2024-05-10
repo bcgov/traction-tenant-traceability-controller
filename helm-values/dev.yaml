@@ -5,4 +5,5 @@ ingress:
   labels:
     certbot-managed: "true"
 
+controller:
   host: traceability-dev.interop.vonx.io
