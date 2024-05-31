@@ -36,7 +36,7 @@ pydantic_core==2.14.6
 PyJWT==2.8.0
 PyLD==2.0.3
 python-baseconv==1.2.2
-python-dotenv==1.0.0
+python-dotenv==1.0.1
 python-multipart==0.0.6
 redis==5.0.1
 requests==2.31.0
