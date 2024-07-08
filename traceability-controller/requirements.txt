@@ -1,7 +1,7 @@
 annotated-types==0.6.0
 anoncreds==0.2.0.dev6
 anyio==3.7.1
-aries-askar==0.3.0
+aries-askar==0.3.2
 async-timeout==4.0.3
 base58==2.1.1
 bitarray==2.9.1
