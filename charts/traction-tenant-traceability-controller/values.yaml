@@ -124,7 +124,7 @@ postgresql:
       enabled: false
     resources:
       limits:
-        cpu: 500m
+        cpu: 800m
         memory: 500Mi
       requests:
         cpu: 100m
