@@ -69,7 +69,7 @@ acapy:
     repository: ghcr.io/hyperledger/aries-cloudagent-python
     pullPolicy: IfNotPresent
     pullSecrets: []
-    tag: py3.9-0.12.1
+    tag: py3.9-0.12.2
 
   replicaCount: 1
   labelOverride: ""
